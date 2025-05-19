@@ -11,6 +11,7 @@ exports.registerLocal = async (req, res) => {
     const user_id = uuidv4();
     const auth_id = uuidv4();
     const org_id = uuidv4();
+    const subscription_id = uuidv4(); 
 
     const { user_email, first_name, last_name, password } = req.body;
 
@@ -43,9 +44,15 @@ exports.registerLocal = async (req, res) => {
             password_hash: await bcryptjs.hash(password, 10)
         }
 
-        const { user, userInfo, auth_provider } = await createUser(userData, userInfoData, auth_providerData)
+        const subscriptionData = {
+            subscription_id: subscription_id,
+            user_id: user_id,
+            subscription_type: 'FREE',
+        }
 
-        return res.status(201).json({ message: "New user created.", user: user, userInfo: userInfo, auth_provider: auth_provider })
+        const { user, userInfo, auth_provider, subscription } = await createUser(userData, userInfoData, auth_providerData, subscriptionData)
+
+        return res.status(201).json({ message: "New user created.", user, userInfo, auth_provider, subscription })
 
     } catch (error) {
         return res.status(500).json({ message: error.message });

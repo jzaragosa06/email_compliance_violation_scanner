@@ -1,11 +1,15 @@
 const User = require("./user.model");
 const UserInfo = require("./userInfo.model");
 const UserAuthProvider = require("./userAuthProvider.model");
+const Subscription = require("./subscription.model");
 const sequelize = require("../config/db");
 
 //constraints
 User.hasOne(UserInfo, { foreignKey: 'user_id' });
 UserInfo.belongsTo(User, { foreignKey: 'user_id' });
+
+Subscription.belongsTo(User, { foreignKey: 'user_id' });
+User.hasOne(Subscription, { foreignKey: 'user_id' }); 
 
 User.hasOne(UserAuthProvider, { foreignKey: 'user_id' });
 UserAuthProvider.belongsTo(User, { foreignKey: 'user_id' });
