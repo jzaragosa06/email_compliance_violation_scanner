@@ -1,4 +1,5 @@
 const { User, UserInfo, UserAuthProvider } = require("../models");
+const sequelize = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const bcryptjs = require("bcryptjs");
 
@@ -16,7 +17,7 @@ exports.getUsers = async (req, res) => {
     return res.status(200).json({ message: "retrieved", users })
 }
 
-exports.getUser = async (user_email) => {
+exports.getUserByEmail = async (user_email) => {
     const user = await User.findOne({
         where: { user_email: user_email },
         include: [
@@ -33,11 +34,13 @@ exports.getUser = async (user_email) => {
 }
 
 exports.createUser = async (userData, userInfoData, auth_providerData) => {
-    const user = await User.create(userData);
+    return await sequelize.transaction(async (t) => {
+        const user = await User.create(userData, { transaction: t });
 
-    const userInfo = await UserInfo.create(userInfoData);
+        const userInfo = await UserInfo.create(userInfoData, { transaction: t });
 
-    const auth_provider = await UserAuthProvider.create(auth_providerData);
+        const auth_provider = await UserAuthProvider.create(auth_providerData, { transaction: t });
 
-    return { user, userInfo, auth_provider };
+        return { user, userInfo, auth_provider }; 
+    });
 }
