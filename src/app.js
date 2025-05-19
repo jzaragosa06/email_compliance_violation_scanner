@@ -2,17 +2,16 @@
 const express = require('express')
 const app = express();
 const sequelize = require("./config/db");
-const { allRoutes } = require('./routes');
-
+const routes = require('./routes'); 
 
 app.use(express.urlencoded({extended: true}));
 app.use(express.json()); 
 
 //routes
-allRoutes(app);
+app.use('/api', routes); 
 
 sequelize.sync({
-    force: false,
+    force: true,
 }).then(() => {
     console.log('Database synced');
     app.listen(3000, () => {
