@@ -7,7 +7,7 @@ const sequelize = require("../config/db");
 User.hasOne(UserInfo, { foreignKey: 'user_id' });
 UserInfo.belongsTo(User, { foreignKey: 'user_id' });
 
-User.hasMany(UserAuthProvider, { foreignKey: 'user_id' });
+User.hasOne(UserAuthProvider, { foreignKey: 'user_id' });
 UserAuthProvider.belongsTo(User, { foreignKey: 'user_id' });
 
 module.exports = { sequelize, User, UserInfo, UserAuthProvider };
