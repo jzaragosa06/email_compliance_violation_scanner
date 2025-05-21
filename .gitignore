@@ -1,3 +1,4 @@
 node_modules/
 .env
 dbdiagram.io.db.schema.sql
+eslint.config.mjs
