@@ -2,7 +2,9 @@ const { User, UserInfo, UserAuthProvider } = require("../models");
 const sequelize = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const bcryptjs = require("bcryptjs");
-const Subscription = require("../models/subscription.model");
+const Subscription = require("../models/subscriptions.model");
+const Management = require("../models/managements.model");
+const { getOrgByUserID } = require("./org.controller");
 
 exports.getUsers = async (req, res) => {
     const users = await User.findAll({
@@ -33,6 +35,9 @@ exports.getUserByEmail = async (user_email) => {
             },
             {
                 model: Subscription
+            },
+            {
+                model: Management, 
             }
         ]
     });
@@ -52,4 +57,16 @@ exports.createUser = async (userData, userInfoData, auth_providerData, subscript
 
         return { user, userInfo, auth_provider, subscription }; 
     });
+}
+
+exports.getOrgManageByUser = async (req, res) => {
+    const { user_id } = req.params;
+
+    if (!user_id) return res.status(400).json({ message: "The client sent a malformed or incomplete request" })
+
+    const org = await getOrgByUserID(user_id);
+
+    if (!org) return res.status(404).json({ message: "No organization found for user" });
+
+    return res.status(200).json({ message: "Organization found", org })
 }

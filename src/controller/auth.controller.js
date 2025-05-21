@@ -10,7 +10,6 @@ const jwt = require("jsonwebtoken");
 exports.registerLocal = async (req, res) => {
     const user_id = uuidv4();
     const auth_id = uuidv4();
-    const org_id = uuidv4();
     const subscription_id = uuidv4(); 
 
     const { user_email, first_name, last_name, password } = req.body;
@@ -27,7 +26,6 @@ exports.registerLocal = async (req, res) => {
     try {
         const userData = {
             user_id: user_id,
-            org_id: org_id,
             user_email: user_email
         }
 
@@ -79,7 +77,6 @@ exports.loginLocal = async (req, res) => {
 
     const token = jwt.sign({
         user_id: user.user_id,
-        org_id: user.org_id,
         user_email: user.user_email,
         first_name: user.UserInfo.first_name,
         last_name: user.UserInfo.last_name,
