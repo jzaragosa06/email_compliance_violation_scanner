@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
-const OrgUserEmail = sequelize.define(
-    "OrgUserEmail",
+const OrgUserAccount = sequelize.define(
+    "OrgUserAccount",
     {
         org_user_email_id: {
             type: DataTypes.STRING(36),
@@ -34,9 +34,9 @@ const OrgUserEmail = sequelize.define(
         },
     },
     {
-        tableName: 'org_user_emails',
+        tableName: 'org_user_accounts',
         timestamps: false,
     }
 );
 
-module.exports = OrgUserEmail;
+module.exports = OrgUserAccount;
