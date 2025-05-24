@@ -4,7 +4,7 @@ const sequelize = require("../config/db");
 const OrgUserAccount = sequelize.define(
     "OrgUserAccount",
     {
-        org_user_email_id: {
+        org_user_account_id: {
             type: DataTypes.STRING(36),
             primaryKey: true,
             allowNull: false,

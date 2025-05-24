@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 
-const UserAuthProvider = sequelize.define(
-    "UserAuthProvider",
+const UserAuth = sequelize.define(
+    "UserAuth",
     {
         auth_id: {
             type: DataTypes.STRING(36),
@@ -21,14 +21,6 @@ const UserAuthProvider = sequelize.define(
             type: DataTypes.ENUM('local', 'google'),
             allowNull: false,
         },
-        provider_user_id: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        password_hash: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
         created_at: {
             type: DataTypes.DATE,
             allowNull: false,
@@ -36,9 +28,9 @@ const UserAuthProvider = sequelize.define(
         },
     },
     {
-        tableName: "user_auth_providers",
+        tableName: "user_auth",
         timestamps: false,
     }
 );
 
-module.exports = UserAuthProvider;
+module.exports = UserAuth;
