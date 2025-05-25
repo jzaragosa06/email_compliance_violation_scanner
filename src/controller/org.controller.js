@@ -1,4 +1,5 @@
 const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg } = require("../services/org.service");
+const { addOrgUserAccounts } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -42,11 +43,6 @@ exports.addOrg = async (req, res) => {
     //we only require the org_domain, org_name, org_trade_name
     if (!org_domain || !org_name || !org_trade_name) return res.status(400).json({ message: "The client sent a malformed or incomplete request" })
 
-    // const existingUser = await findOrgByUserID(user_id);
-    // if (!existingUser) {
-    //     return res.status(404).json({ message: "User associated with token not found." });
-    // }
-
     try {
         const result = await addOrg(user_id, org_domain, org_email, org_name, org_trade_name, org_phone, org_description, org_employee_count, org_logo); 
 
@@ -56,4 +52,30 @@ exports.addOrg = async (req, res) => {
         return res.status(500).json({ message: error.message })
     }
 
+}
+
+//org user accounts
+//we will require the emails to be in array format so that we don't have to create
+//a separate controller for adding a single email. 
+exports.addOrgUserAccounts = async (req, res) => {
+    const { org_id } = req.params;
+    const { user_id } = req.user;
+    let { emails } = req.body;
+
+    if (!org_id || !emails) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
+
+    //convert to array
+    if (!Array.isArray(emails)) {
+        emails = [emails];
+    }
+
+    //clean for duplicates. Set
+    emails = [...new Set(emails)];
+
+    try {
+        const result = await addOrgUserAccounts(org_id, user_id, emails);
+        res.status(201).json({ message: "Org user accounts added successfully", ...result });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 }

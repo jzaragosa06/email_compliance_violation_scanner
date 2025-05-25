@@ -139,14 +139,3 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
         return { management, org, orgInfo, policy }
     });
 }
-
-exports.addOrgUserAccounts = async (org_id, emails) => {
-    //prepare the data (org_user_account_id, org_id, email); 
-    //emails is an array of string. we can use the map to
-    //create a array of object, each representing the data for manual insert. 
-    const org_user_accounts = emails.map((email) => ({ org_user_account_id: generateUUIV4(), org_id: org_id, email: email }));
-
-    return await sequelize.transaction(async (t) => {
-        return await OrgUserAccount.bulkCreate(org_user_accounts, { transaction: t, ignoreDuplicates: true },);
-    });
-}
