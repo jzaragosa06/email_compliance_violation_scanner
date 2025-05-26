@@ -2,92 +2,109 @@ const { createGmailClient } = require("./gmail.service");
 const { getAccessToken } = require("./oauth.service");
 const { findOneOrgUserAccountsByEmailAndOrgId } = require("./org_user_account.service");
 
-
-exports.analyzeOrgUserAccounts = async (org_id, user_id, emails) => {
+// Entry Point
+exports.analyzeOrgUserAccounts = async (orgId, userId, emails) => {
     for (const email of emails) {
-        const org_user_account = await findOneOrgUserAccountsByEmailAndOrgId(org_id, email);
+        try {
+            const orgUserAccount = await findOneOrgUserAccountsByEmailAndOrgId(orgId, email);
+            if (!orgUserAccount || !orgUserAccount.EmailAccountAuth) continue;
 
-        const refresh_token = org_user_account.EmailAccountAuth.refresh_token;
-        const access_token = await getAccessToken(refresh_token);
+            const refreshToken = orgUserAccount.EmailAccountAuth.refresh_token;
+            const accessToken = await getAccessToken(refreshToken);
+            const gmailClient = await createGmailClient(accessToken, refreshToken);
 
-        const gmailClient = await createGmailClient(access_token, refresh_token);
+            const messages = await fetchEmailList(gmailClient, 'in:inbox');
 
-        const messages = await this.getEmailList(gmailClient, 'in:inbox');
-
-        for (const message of messages) {
-            const rawEmail = await this.readEmail(gmailClient, message);
-            const cleanedEmail = await this.extractEmailData(rawEmail);
-
-            //then we will pass this on analysis
-            await this.compareEmailAgainstPolicyRules(cleanedEmail, org_user_account)
+            for (const message of messages) {
+                const rawEmail = await fetchEmailDetails(gmailClient, message.id);
+                const parsedEmail = parseEmail(rawEmail);
+                await analyzeEmail(parsedEmail, orgUserAccount);
+            }
+        } catch (error) {
+            console.error(`Failed to process emails for: ${email}`, error);
         }
     }
-}
+};
 
-//we will use this to get both the inbox and sent (q: 'in:inbox' or q: 'in:sent')
-exports.getEmailList = async (gmailClient, q) => {
-    const response = await gmailClient.users.messages.list({
+// Fetch message list based on query
+const fetchEmailList = async (gmailClient, query) => {
+    const res = await gmailClient.users.messages.list({
         userId: 'me',
         maxResults: 10,
-        q: q,
+        q: query,
     });
 
-    if (!response.data.messages || response.data.messages.length == 0) {
-        throw new Error("An error occurred. No emails found");
-    }
+    return res.data.messages || [];
+};
 
-    const messages = response.data.messages;
-    return messages;
-}
-
-
-//TODO: using id, read the email subjeckt, body, metadata
-exports.readEmail = async (gmailClient, message) => {
-    const emailData = await gmailClient.users.messages.get({
+// Fetch full message details
+const fetchEmailDetails = async (gmailClient, messageId) => {
+    const res = await gmailClient.users.messages.get({
         userId: 'me',
-        id: message.id,
+        id: messageId,
         format: 'full',
     });
 
-    const email = emailData.data;
-    return email;
+    return res.data;
+};
 
-}
-
-exports.extractEmailData = (email) => {
-    const headers = email.payload.headers || [];
-    const subject = headers.find(h => h.name === 'Subject')?.value || '';
-    const from = headers.find(h => h.name === 'From')?.value || '';
-    const to = headers.find(h => h.name === 'To')?.value || '';
-    const date = headers.find(h => h.name === 'Date')?.value || '';
-
-    let body = '';
-    if (email.payload.body && email.payload.body.data) {
-        body = Buffer.from(email.payload.body.data, 'base64').toString();
-    } else if (email.payload.parts) {
-        for (const part of email.payload.parts) {
-            if (part.mimeType === 'text/plain' && part.body && part.body.data) {
-                body += Buffer.from(part.body.data, 'base64').toString();
-            }
-        }
-    }
+// Parse email headers and body
+const parseEmail = (email) => {
+    const headers = extractHeaders(email.payload.headers);
+    const body = extractBody(email.payload);
 
     return {
-        subject,
-        from,
-        to,
-        date,
+        ...headers,
         body
+    };
+};
+
+const extractHeaders = (headers = []) => {
+    const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
+    return {
+        subject: getHeader('Subject'),
+        from: getHeader('From'),
+        to: getHeader('To'),
+        date: getHeader('Date'),
+    };
+};
+
+const extractBody = (payload) => {
+    if (payload.body?.data) {
+        return decodeBase64(payload.body.data);
     }
-}
 
-//TODO: function for analyis. this is where we pass the data, then we look for violation
-exports.compareEmailAgainstPolicyRules = (email, org_user_account) => {
+    if (payload.parts) {
+        return payload.parts
+            .filter(part => part.mimeType === 'text/plain')
+            .map(part => decodeBase64(part.body.data))
+            .join('\n');
+    }
 
-}
+    return '';
+};
 
-//TODO: function for adding the flagged user account and corresponding emails into the db. 
-//we need to check if user account already exist in the email violations so as not to create a new instance
-exports.addToEmailViolations = (violations, org_user_account) => {
+const decodeBase64 = (str) => {
+    return Buffer.from(str, 'base64').toString('utf8');
+};
 
-}
+// Email policy check
+const analyzeEmail = async (email, orgUserAccount) => {
+    // Placeholder logic
+    const violations = await compareEmailAgainstPolicyRules(email, orgUserAccount);
+    if (violations && violations.length > 0) {
+        await addToEmailViolations(violations, orgUserAccount);
+    }
+};
+
+// Placeholder for policy comparison
+const compareEmailAgainstPolicyRules = async (email, orgUserAccount) => {
+    // TODO: Implement rule checks
+    return []; // Return array of violations
+};
+
+// Add to violation DB
+const addToEmailViolations = async (violations, orgUserAccount) => {
+    // TODO: Implement logic to store violations
+};
+
