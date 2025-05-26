@@ -87,6 +87,14 @@ exports.findOrgByOrgId = async (org_id) => {
     return org;
 }
 
+exports.deleteOneOrgById = async (org_id) => {
+    const org = await Org.findByPk(org_id);
+
+    if (!org) throw new Error("Organization not found");
+
+    return await org.destroy();
+}
+
 exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name, org_phone, org_description, org_employee_count, org_logo) => {
 
     const org_id = generateUUIV4();

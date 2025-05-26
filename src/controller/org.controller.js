@@ -1,5 +1,5 @@
-const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg } = require("../services/org.service");
-const { addOrgUserAccounts } = require("../services/org_user_account.service");
+const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById } = require("../services/org.service");
+const { addOrgUserAccounts, deleteOneOrgUserAccounById } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -30,6 +30,20 @@ exports.findOrgByOrgId = async (req, res) => {
     if (!org) return res.status(404).json({ message: "Organization Not Found" });
 
     return res.status(200).json({ message: "Organization Found", org: org })
+}
+
+exports.deleteOneOrgById = async (req, res) => {
+    const { org_id } = req.params;
+
+    if (!org_id) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
+
+    try {
+        const org = await deleteOneOrgById(org_id);
+
+        return res.status(200).json({ message: "Organization deleted successfully", org });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
 }
 
 exports.addOrg = async (req, res) => {
@@ -77,5 +91,19 @@ exports.addOrgUserAccounts = async (req, res) => {
         res.status(201).json({ message: "Org user accounts added successfully", ...result });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+}
+
+exports.deleteOneOrgUserAccounById = async (req, res) => {
+    const { org_user_account_id } = req.params;
+
+    if (!org_user_account_id) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
+
+    try {
+        const org_user_account = await deleteOneOrgUserAccounById(org_user_account_id);
+
+        return res.status(200).json({ message: "Organization user account deleted successfully", org_user_account });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 }

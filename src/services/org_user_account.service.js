@@ -58,8 +58,12 @@ exports.addOrgUserAccounts = async (org_id, user_id, emails) => {
             email_account_auth_id: generateUUIV4(),
             state: state,
             analysis_log_id: generateUUIV4(),
+            authUrl: authUrl
         }
     }));
+
+    console.log('emaildatas: ', emailDatas);
+
 
     const org_user_account_data = emailDatas.map((emailData) => ({
         org_user_account_id: emailData.org_user_account_id,
@@ -97,5 +101,12 @@ exports.updateEmailAccoutAuthsRefreshToken = async (refresh_token, email_account
     return await EmailAccountAuth.update(
         { refresh_token: refresh_token },
         { where: { email_account_auth_id: email_account_auth_id } });
+}
 
+exports.deleteOneOrgUserAccounById = async (org_user_account_id) => {
+    const org_user_account = await OrgUserAccount.findByPk(org_user_account_id);
+
+    if (!org_user_account) throw new Error("Organization user account not found");
+
+    return await org_user_account.destroy();
 }

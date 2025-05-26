@@ -88,6 +88,14 @@ exports.findUserByUserId = async (user_id) => {
     return user;
 }
 
+exports.deleteOneUserById = async (user_id) => {
+    const user = await User.findByPk(user_id);
+
+    if (!user) throw new Error("User not found");
+
+    return await user.destroy();
+}
+
 exports.createUser = async (userData, userInfoData, userAuthData, localAuthData, googleAuthData, subscriptionData) => {
     return await sequelize.transaction(async (t) => {
         const user = await User.create(userData, { transaction: t });
@@ -107,4 +115,6 @@ exports.createUser = async (userData, userInfoData, userAuthData, localAuthData,
         return { user, userInfo, userAuth, localAuth, googleAuth, subscription };
     });
 }
+
+
 
