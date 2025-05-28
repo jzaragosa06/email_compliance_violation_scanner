@@ -1,110 +1,162 @@
-const { createGmailClient } = require("./gmail.service");
+const { createGmailClient, fetchEmailList, parseEmail, fetchEmailDetails } = require("./gmail.service");
+const { findManagementByOrgId } = require("./management.service");
 const { getAccessToken } = require("./oauth.service");
 const { findOneOrgUserAccountsByEmailAndOrgId } = require("./org_user_account.service");
+const VIOLATION_RULES = require("../config/violationRules");
+const { addEmailViolation } = require("./violations.service");
 
 // Entry Point
-exports.analyzeOrgUserAccounts = async (orgId, userId, emails) => {
+exports.analyzeOrgUserAccounts = async (org_id, emails) => {
+    if (!org_id || !emails) throw new Error("Invalid parameters");
+
+    const management = await findManagementByOrgId(org_id);
+    if (!management) throw new Error("Management not found");
+
+    const withViolations = [];
+    const withoutViolations = [];
+    const withErrors = [];
+
     for (const email of emails) {
         try {
-            const orgUserAccount = await findOneOrgUserAccountsByEmailAndOrgId(orgId, email);
-            if (!orgUserAccount || !orgUserAccount.EmailAccountAuth) continue;
+            const orgUserAccount = await findOneOrgUserAccountsByEmailAndOrgId(org_id, email);
+            if (!orgUserAccount || !management || !orgUserAccount.EmailAccountAuth) throw new Error("No org / org user found or no auth");;
 
-            const refreshToken = orgUserAccount.EmailAccountAuth.refresh_token;
-            const accessToken = await getAccessToken(refreshToken);
-            const gmailClient = await createGmailClient(accessToken, refreshToken);
+            const gmailClient = await createGmailClient(
+                await getAccessToken(orgUserAccount.EmailAccountAuth.refresh_token),
+                orgUserAccount.EmailAccountAuth.refresh_token
+            );
 
             const messages = await fetchEmailList(gmailClient, 'in:inbox');
+
+            console.log('messages: ', messages);
+
 
             for (const message of messages) {
                 const rawEmail = await fetchEmailDetails(gmailClient, message.id);
                 const parsedEmail = parseEmail(rawEmail);
-                await analyzeEmail(parsedEmail, orgUserAccount);
+
+                // console.log(`parsed email of ${message.id} : ${JSON.stringify(parsedEmail, null, 2)}`);
+
+                const violations = await compareEmailAgainstPolicyRules(parsedEmail);
+
+                if (violations?.length) {
+                    const result = await addEmailViolation(
+                        management.management_id,
+                        orgUserAccount.org_user_account_id,
+                        parsedEmail.subject,
+                        violations.map(v => v.type),
+                    );
+                    withViolations.push(result);
+                }
+                else {
+                    withoutViolations.push({
+                        email: parsedEmail.subject,
+                    }); 
+                }
+
             }
         } catch (error) {
-            console.error(`Failed to process emails for: ${email}`, error);
+            withErrors.push(
+                {
+                    email: email,
+                    error: error.message
+                }
+            )
         }
     }
-};
-
-// Fetch message list based on query
-const fetchEmailList = async (gmailClient, query) => {
-    const res = await gmailClient.users.messages.list({
-        userId: 'me',
-        maxResults: 10,
-        q: query,
-    });
-
-    return res.data.messages || [];
-};
-
-// Fetch full message details
-const fetchEmailDetails = async (gmailClient, messageId) => {
-    const res = await gmailClient.users.messages.get({
-        userId: 'me',
-        id: messageId,
-        format: 'full',
-    });
-
-    return res.data;
-};
-
-// Parse email headers and body
-const parseEmail = (email) => {
-    const headers = extractHeaders(email.payload.headers);
-    const body = extractBody(email.payload);
 
     return {
-        ...headers,
-        body
+        withViolations,
+        withoutViolations,
+        withErrors,
+        processedOrgUserAccountCount: emails.length,
+        violationsCount: withViolations.length,
+        withoutViolationsCount: withoutViolations.length,
+        errorsCount: withErrors.length,
     };
 };
 
-const extractHeaders = (headers = []) => {
-    const getHeader = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';
-    return {
-        subject: getHeader('Subject'),
-        from: getHeader('From'),
-        to: getHeader('To'),
-        date: getHeader('Date'),
-    };
-};
 
-const extractBody = (payload) => {
-    if (payload.body?.data) {
-        return decodeBase64(payload.body.data);
+
+//email has subject, from, to, date, and body, and attatchement (an array maybe);
+const compareEmailAgainstPolicyRules = async (email) => {
+    const violations = [];
+
+    try {
+        //check sensitive words
+        const fullContent = `${email.subject} ${email.body}`;
+        for (const pattern of VIOLATION_RULES.SENSITIVE_KEYWORDS.patterns) {
+            const match = fullContent.match(pattern);
+            if (match) {
+                violations.push({
+                    type: 'SENSITIVE_KEYWORDS',
+                    rule: VIOLATION_RULES.SENSITIVE_KEYWORDS.name,
+                    severity: VIOLATION_RULES.SENSITIVE_KEYWORDS.severity,
+                    evidence: match[0],
+                });
+                break;
+            }
+        }
+
+        //external recipeints
+        for (const rule of VIOLATION_RULES.EXTERNAL_SHARING.patterns) {
+            if (rule.test(fullContent)) {
+                violations.push({
+                    type: 'EXTERNAL_SHARING',
+                    rule: VIOLATION_RULES.EXTERNAL_SHARING.name,
+                    severity: VIOLATION_RULES.EXTERNAL_SHARING.severity,
+                    evidence: "",
+                });
+                break;
+            }
     }
 
-    if (payload.parts) {
-        return payload.parts
-            .filter(part => part.mimeType === 'text/plain')
-            .map(part => decodeBase64(part.body.data))
-            .join('\n');
+        // //attatchement size violations
+        if (email.attachments?.length > 0) {
+            const largeAttachements = email.attachments.filter(
+                att => att.size > VIOLATION_RULES.LARGE_ATTACHMENTS.maxSize
+            );
+            if (largeAttachements.length > 0) {
+                violations.push({
+                    type: 'LARGE_ATTACHMENTS',
+                    rule: VIOLATION_RULES.LARGE_ATTACHMENTS.name,
+                    severity: VIOLATION_RULES.LARGE_ATTACHMENTS.severity,
+                    evidence: "",
+                });
+            }
+        }
+
+        // //phishing
+        for (const pattern of VIOLATION_RULES.PHISHING_INDICATORS.patterns) {
+            if (pattern.test(fullContent)) {
+                violations.push({
+                    type: 'PHISHING_INDICATORS',
+                    rule: VIOLATION_RULES.PHISHING_INDICATORS.name,
+                    severity: VIOLATION_RULES.PHISHING_INDICATORS.severity,
+                    evidence: "",
+                });
+                break;
+            }
+        }
+
+        // //company violations
+        for (const pattern of VIOLATION_RULES.POLICY_VIOLATIONS.patterns) {
+            if (pattern.test(fullContent)) {
+                violations.push({
+                    type: 'POLICY_VIOLATIONS',
+                    rule: VIOLATION_RULES.POLICY_VIOLATIONS.name,
+                    severity: VIOLATION_RULES.POLICY_VIOLATIONS.severity,
+                    evidence: "",
+                });
+                break;
+            }
+        }
+    } catch (error) {
+        throw new Error(error.message)
     }
 
-    return '';
+    return violations;
+
 };
 
-const decodeBase64 = (str) => {
-    return Buffer.from(str, 'base64').toString('utf8');
-};
-
-// Email policy check
-const analyzeEmail = async (email, orgUserAccount) => {
-    // Placeholder logic
-    const violations = await compareEmailAgainstPolicyRules(email, orgUserAccount);
-    if (violations && violations.length > 0) {
-        await addToEmailViolations(violations, orgUserAccount);
-    }
-};
-
-// Placeholder for policy comparison
-const compareEmailAgainstPolicyRules = async (email, orgUserAccount) => {
-    // TODO: Implement rule checks
-    return []; // Return array of violations
-};
-
-// Add to violation DB
-const addToEmailViolations = async (violations, orgUserAccount) => {
-    // TODO: Implement logic to store violations
-};
 

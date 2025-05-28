@@ -13,5 +13,6 @@ exports.sendAuthenticationInvitationEmail = async (email, emailSubject, emailBod
     const info = await transporter.sendMail(mailOptions);
     console.log(`mail options: ${mailOptions}. ----- response: ${info.response}`);
     return info.response;
-
 }
+
+
