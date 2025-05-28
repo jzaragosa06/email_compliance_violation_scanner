@@ -1,12 +1,12 @@
-const { sequelize, OrgUserAccount, Org, OrgInfo, Policy, Management } = require("../models");
+const { sequelize, OrgUserAccount, Org, OrgInfo, Policy, Management, ScheduledJob } = require("../models");
 
 const { generateUUIV4 } = require("../utils/generateUuidv4");
 
 
-exports.findOrgByDomain = async (domain) => {
+exports.findOrgByDomain = async (org_domain) => {
     const org = await Org.findOne(
         {
-            where: { domain: domain },
+            where: { org_domain: org_domain },
             include: [
                 {
                     model: OrgInfo,
@@ -100,6 +100,8 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
     const org_id = generateUUIV4();
     const management_id = generateUUIV4();
     const org_email_policy_id = generateUUIV4();
+    const scheduled_job_id = generateUUIV4();
+
 
     return await sequelize.transaction(async (t) => {
         const org = await Org.create(
@@ -121,6 +123,14 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
             },
             { transaction: t }
         );
+
+        const scheduledJob = await ScheduledJob.create(
+            {
+                scheduled_job_id: scheduled_job_id,
+                management_id: management_id,
+            },
+            { transaction: t }
+        ); 
 
         const orgInfo = await OrgInfo.create(
             {
@@ -144,6 +154,6 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
             { transaction: t }
         );
 
-        return { management, org, orgInfo, policy }
+        return { management, org, orgInfo, policy, scheduledJob }
     });
 }
