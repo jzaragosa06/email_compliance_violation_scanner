@@ -1,11 +1,12 @@
-const { emailTransporter } = require("../config/transporter")
+const { emailTransporter } = require("../config/transporter");
+require("dotenv").config(); 
 
-exports.sendAuthenticationInvitationEmail = async (email, emailSubject, emailBody, user) => {
+exports.sendEmail = async (reciever, emailSubject, emailBody) => {
     const transporter = emailTransporter();
 
     const mailOptions = {
-        from: `"MailSiever" <${user.user_email}>`,
-        to: email,
+        from: `"MailSiever" <${process.env.GOOGLE_USER}>`,
+        to: reciever,
         subject: emailSubject,
         html: emailBody,
     };
@@ -14,5 +15,3 @@ exports.sendAuthenticationInvitationEmail = async (email, emailSubject, emailBod
     console.log(`mail options: ${mailOptions}. ----- response: ${info.response}`);
     return info.response;
 }
-
-
