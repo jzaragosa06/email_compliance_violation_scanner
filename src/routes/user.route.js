@@ -4,7 +4,9 @@ const user = require("../controller/user.controller");
 const { authenticateToken } = require('../middleware/auth.middleware');
 
 router.get('/', authenticateToken, user.findAllUsers);
-router.get('/:user_id/org', authenticateToken, authenticateToken, user.findOrgManageByUser); //fetches the org manage by th user
-router.delete('/:user_id', authenticateToken, user.deleteOneUserByID); 
+router.get('/me/orgs', authenticateToken, authenticateToken, user.findOrgsManageByUser); //fetches the orgs manage by th user
+router.delete('/me', authenticateToken, user.deleteOneUserByID);
+
+router.patch("/me", authenticateToken, user.updateUserInfo); 
 
 module.exports = router;

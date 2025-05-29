@@ -111,10 +111,24 @@ exports.createUser = async (userData, userInfoData, userAuthData, localAuthData,
         const subscription = await Subscription.create(subscriptionData, { transaction: t });
 
 
-
         return { user, userInfo, userAuth, localAuth, googleAuth, subscription };
     });
 }
 
+exports.updateUserInfo = async (user_id, first_name, last_name, country, contact_number, job_title) => {
+    const userInfo = await UserInfo.findByPk(user_id);
+
+    if (!userInfo) throw new Error("User not found");
+
+    userInfo.set({
+        first_name: first_name,
+        last_name: last_name,
+        country: country,
+        contact_number: contact_number,
+        job_title: job_title
+    });
+    userInfo.save();
+    return userInfo;
+}
 
 

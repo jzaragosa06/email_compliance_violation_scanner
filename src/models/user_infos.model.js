@@ -21,6 +21,26 @@ const UserInfo = sequelize.define(
             type: DataTypes.STRING,
             allowNull: true,
         },
+        country: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        contact_number: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        job_title: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        is_verified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        privacy_consent_given: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        }, 
         created_at: {
             type: DataTypes.DATE,
             allowNull: false,
