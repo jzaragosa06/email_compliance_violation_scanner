@@ -59,15 +59,12 @@ exports.fetchActiveScheduledJob = async () => {
         ]
     });
 
-    console.log('activeScheduledJobs', JSON.stringify(activeScheduledJobs, null, 2));
-
-
     const activeJobs = activeScheduledJobs.map((j) => ({
         user_id: j.user_id,
         org_id: j.org_id,
         management_id: j.management_id,
         scheduled_expression: j.ScheduledJob.scheduled_expression,
-        send_mail: j.ScheduledJob.send_email,
+        send_email: j.ScheduledJob.send_email,
     }));
 
     console.log('activejobs', activeJobs);

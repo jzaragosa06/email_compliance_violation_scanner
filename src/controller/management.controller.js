@@ -10,7 +10,7 @@ exports.findScheduledJobByManagementId = async (req, res) => {
         const scheduled_job = await findScheduledJobByManagementId(management_id)
         return res.status(200).json({ message: "Scheduled job found", scheduled_job });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }
 
@@ -31,6 +31,6 @@ exports.updateScheduledJob = async (req, res) => {
 
         res.status(200).json({ message: "Scheduled job updated successfull", scheduled_job });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }

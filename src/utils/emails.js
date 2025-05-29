@@ -63,3 +63,68 @@ exports.generateEmailSignature = (mainColor = '#FE7743', linkColor = '#273F4F') 
     </div>
   `;
 };
+
+
+exports.generateEmailAnalysisReportEmail = (violationsCount, org) => {
+  // Brand colors
+  const mainColor = '#FE7743';       // Orange
+  const secondaryColor = '#273F4F';  // Dark Blue
+  const backgroundColor = '#EFEEEA'; // Light background
+  const textColor = '#000000';       // Black
+
+  const emailSubject = `Email Analysis Report for ${org.OrgInfo.org_name}`;
+
+  const emailBody = `
+    <div style="font-family: Arial, sans-serif; background-color: ${backgroundColor}; color: ${textColor}; padding: 30px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); overflow: hidden;">
+
+        <!-- Header -->
+        <div style="background-color: ${secondaryColor}; color: white; padding: 24px 32px; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+          <h2 style="margin: 0;">Email Policy Analysis Summary</h2>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 24px 32px; font-size: 15px; line-height: 1.6;">
+          <p>Hello,</p>
+
+          <p>Here is your email policy compliance summary for the organization:</p>
+
+          <div style="background-color: #F4F4F4; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
+            <strong>Organization:</strong> ${org.OrgInfo.org_name}<br>
+            <strong>Domain:</strong> ${org.org_domain}
+          </div>
+
+          ${violationsCount === 0
+      ? `<p style="color: green;"><strong>No violations detected.</strong> Great job maintaining email policy compliance!</p>`
+      : `
+                <p style="color: #D32F2F;"><strong>${violationsCount} potential policy violation(s) detected.</strong></p>
+                <p>Please visit your compliance dashboard to review and address the issues.</p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="https://mailsiever.com/dashboard" style="
+                    background-color: ${mainColor};
+                    color: white;
+                    padding: 14px 28px;
+                    text-decoration: none;
+                    font-size: 16px;
+                    font-weight: bold;
+                    border-radius: 8px;
+                    display: inline-block;
+                  ">
+                    Review Violations
+                  </a>
+                </div>
+              `
+    }
+
+          <p>If you have any questions or believe this report is inaccurate, please reach out to your IT administrator.</p>
+        </div>
+
+        <!-- Signature -->
+        ${exports.generateEmailSignature(mainColor, secondaryColor)}
+
+      </div>
+    </div>
+  `;
+
+  return { emailSubject, emailBody };
+};

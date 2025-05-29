@@ -41,8 +41,8 @@ exports.findAllOrgs = async () => {
     return orgs;
 }
 
-exports.findOrgByUserID = async (user_id) => {
-    const org = await Management.findOne({
+exports.findOrgsByUserID = async (user_id) => {
+    const org = await Management.findAll({
         where: { user_id: user_id },
         include: [
             {
@@ -54,9 +54,6 @@ exports.findOrgByUserID = async (user_id) => {
                     {
                         model: Policy,
                     },
-                    {
-                        model: OrgUserAccount,
-                    }
                 ]
 
             },
@@ -95,7 +92,7 @@ exports.deleteOneOrgById = async (org_id) => {
     return await org.destroy();
 }
 
-exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name, org_phone, org_description, org_employee_count, org_logo) => {
+exports.addOrg = async (user_id, org_domain, org_email, org_name, org_phone, org_description, org_employee_count, org_logo) => {
 
     const org_id = generateUUIV4();
     const management_id = generateUUIV4();
@@ -136,7 +133,6 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
             {
                 org_id: org_id,
                 org_name: org_name,
-                org_trade_name: org_trade_name,
                 org_email: org_email || null,
                 org_phone: org_phone || null,
                 org_description: org_description || null,
@@ -156,4 +152,25 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_trade_name
 
         return { management, org, orgInfo, policy, scheduledJob }
     });
+}
+
+exports.updateOrgInfo = async (org_id, org_name, org_email, org_phone, org_description, org_employee_count, org_logo) => {
+    const orgInfo = await OrgInfo.findByPk(org_id);
+
+    if (!orgInfo) throw new Error("No organization info found");
+
+    try {
+        orgInfo.set({
+            org_name: org_name,
+            org_email: org_email,
+            org_phone: org_phone,
+            org_description: org_description,
+            org_employee_count: org_employee_count,
+            org_logo: org_logo
+        });
+        orgInfo.save();
+        return orgInfo;
+    } catch (error) {
+        throw new Error(error.message)
+    }
 }
