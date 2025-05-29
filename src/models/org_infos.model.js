@@ -18,10 +18,6 @@ const OrgInfo = sequelize.define(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        org_trade_name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
         org_email: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -38,6 +34,10 @@ const OrgInfo = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: true,
         },
+        org_logo: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        }, 
         created_at: {
             type: DataTypes.DATE(),
             allowNull: false,

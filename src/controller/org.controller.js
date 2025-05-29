@@ -1,5 +1,5 @@
 const { analyzeOrgUserAccounts } = require("../services/analysis.service");
-const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById } = require("../services/org.service");
+const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById, updateOrgInfo } = require("../services/org.service");
 const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
@@ -43,7 +43,7 @@ exports.deleteOneOrgById = async (req, res) => {
 
         return res.status(200).json({ message: "Organization deleted successfully", org });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }
 
@@ -53,22 +53,22 @@ exports.addOrg = async (req, res) => {
 
     console.log('user_id', user_id);
 
-    const { org_domain, org_email, org_name, org_trade_name, org_phone, org_description, org_employee_count, org_logo } = req.body;
+    const { org_domain, org_email, org_name, org_phone, org_description, org_employee_count, org_logo } = req.body;
 
-    //we only require the org_domain, org_name, org_trade_name
-    if (!org_domain || !org_name || !org_trade_name) return res.status(400).json({ message: "The client sent a malformed or incomplete request" })
+    //we only require the org_domain, org_name
+    if (!org_domain || !org_name) return res.status(400).json({ message: "The client sent a malformed or incomplete request" })
 
     try {
         //check if domain already exist
         const org = await findOrgByDomain(org_domain);
         if (org) return res.status(409).json({ message: 'Org already exist. No two user can manage the same organization' }); 
 
-        const result = await addOrg(user_id, org_domain, org_email, org_name, org_trade_name, org_phone, org_description, org_employee_count, org_logo); 
+        const result = await addOrg(user_id, org_domain, org_email, org_name, org_phone, org_description, org_employee_count, org_logo); 
 
         return res.status(201).json({ message: "New Organization Added", ...result })
 
     } catch (error) {
-        return res.status(500).json({ message: error.message })
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 
 }
@@ -92,12 +92,11 @@ exports.addOrgUserAccounts = async (req, res) => {
     emails = [...new Set(emails)];
     emails = await cleanForNewOrgUserAccounts(org_id, emails); 
 
-
     try {
         const result = await addOrgUserAccounts(org_id, user_id, emails);
         res.status(201).json({ message: "Org user accounts added successfully", ...result });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }
 
@@ -111,7 +110,7 @@ exports.deleteOneOrgUserAccounById = async (req, res) => {
 
         return res.status(200).json({ message: "Organization user account deleted successfully", org_user_account });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }
 
@@ -131,25 +130,56 @@ exports.analyzeOrgUserAccounts = async (req, res) => {
 
     try {
         const result = await analyzeOrgUserAccounts(org_id, emails);
-        return res.status(200).json(result);
+        return res.status(200).json({ message: "Organization user account analyzed sucessfully", result });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 }
 
 exports.analyzeAllAuthenticatedOrgUserAccounts = async (req, res) => {
     const { org_id } = req.params;
+    const { user_id } = req.user;
+
+    if (!org_id || !user_id) {
+        return res.status(400).json({
+            message: "Missing required parameters"
+        });
+    }
 
     const org_user_accounts = await findAllAuthenticatedOrgUserAccount(org_id);
 
     const emails = org_user_accounts.map((org_user_account) => (org_user_account.email));
 
-
     try {
         const result = await analyzeOrgUserAccounts(org_id, emails);
 
-        return res.status(200).json({ message: "Organization user account analyzed sucessfully" }, result);
+        return res.status(200).json({ message: "Organization user account analyzed sucessfully", result });
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+}
+
+
+exports.updateOrgInfo = async (req, res) => {
+    const { org_id } = req.params;
+
+    if (!org_id) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
+
+    let { org_name, org_email, org_phone, org_description, org_employee_count, org_logo } = req.body;
+
+    try {
+        const employeeCount = org_employee_count ? parseInt(org_employee_count, 10) : null;
+        if (org_employee_count && isNaN(employeeCount)) {
+            return res.status(400).json({
+                message: 'Invalid employee count value',
+                error: 'Employee count must be a number'
+            });
+        }
+        const orgInfo = await updateOrgInfo(org_id, org_name, org_email, org_phone, org_description, employeeCount, org_logo);
+        return res.status(200).json({ message: "Organization info updated successfully", orgInfo });
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Failed to update organization info', error: error.message });
+
     }
 }
