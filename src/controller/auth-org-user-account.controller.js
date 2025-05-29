@@ -1,5 +1,5 @@
 const { createOAuth2Client } = require("../config/gOAuth");
-const { findOneOrgUserAccountsById, updateEmailAccoutAuthsRefreshToken } = require("../services/org_user_account.service");
+const { findOneOrgUserAccountsById, updateEmailAccoutAuthsRefreshToken, updateAuthenticatedStatus } = require("../services/org_user_account.service");
 const path = require("path");
 
 exports.googleOAuthCallback = async (req, res) => {
@@ -26,17 +26,12 @@ exports.googleOAuthCallback = async (req, res) => {
         if (!tokens || !tokens.access_token) throw new Error("No access token receive from Google");
 
         //update the refresh token in the db
-        const updated = await updateEmailAccoutAuthsRefreshToken(tokens.refresh_token, orgUserAccount.EmailAccountAuth.email_account_auth_id);
-
-        // return res.status(200).json({
-        //     success: true,
-        //     message: "Email account successfully authorized",
-        // });
+        await updateEmailAccoutAuthsRefreshToken(tokens.refresh_token, orgUserAccount.EmailAccountAuth.email_account_auth_id);
+        await updateAuthenticatedStatus(org_user_account_id);
 
         return res.sendFile(path.join(__dirname, "..", "public", "org-user-account-successful-auth.html"));
     } catch (error) {
         return res.status(500).json({
-            success: true,
             message: "Email account authorization failed",
             error: error
         });
