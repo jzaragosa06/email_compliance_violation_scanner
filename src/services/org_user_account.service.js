@@ -2,7 +2,7 @@ const { sequelize, OrgUserAccount, EmailAccountAuth, EmailAccountStatus, EmailAn
 const { generateGoogleOAuthEmail } = require("../utils/emails");
 const { generateState } = require("../utils/generateState");
 const { generateUUIV4 } = require("../utils/generateUuidv4");
-const { sendAuthenticationInvitationEmail } = require("./email.service");
+const { sendEmail } = require("./email.service");
 const { generateAuthURL } = require("./oauth.service");
 const { findOrgByOrgId } = require("./org.service");
 const { findUserByUserId } = require("./user.service");
@@ -81,7 +81,7 @@ exports.addOrgUserAccounts = async (org_id, user_id, emails) => {
 
         //then send an email
         //send authurl to the org_user_account using email
-        await sendAuthenticationInvitationEmail(email, emailSubject, emailBody, user);
+        await sendEmail(email, emailSubject, emailBody);
 
         return {
             org_user_account_id: org_user_account_id,
@@ -133,6 +133,13 @@ exports.updateEmailAccoutAuthsRefreshToken = async (refresh_token, email_account
     return await EmailAccountAuth.update(
         { refresh_token: refresh_token },
         { where: { email_account_auth_id: email_account_auth_id } });
+}
+
+exports.updateAuthenticatedStatus = async (org_user_account_id) => {
+    return await EmailAccountStatus.update(
+        { is_authenticated: 1 },
+        { where: { org_user_account_id: org_user_account_id } }
+    );
 }
 
 exports.deleteOneOrgUserAccounById = async (org_user_account_id) => {
