@@ -1,8 +1,9 @@
 const { google } = require("googleapis");
-const { createOAuth2Client } = require("../config/gOAuth")
+const { createOAuth2Client } = require("../config/gOAuth");
+require('dotenv').config();
 
 exports.createGmailClient = async (access_token, refresh_token) => {
-    const oauth2Client = await createOAuth2Client();
+    const oauth2Client = await createOAuth2Client(process.env.GOOGLE_ORG_USER_REDIRECT_URI);
 
     oauth2Client.setCredentials({
         access_token: access_token,

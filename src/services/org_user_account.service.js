@@ -3,9 +3,10 @@ const { generateGoogleOAuthEmail } = require("../utils/emails");
 const { generateState } = require("../utils/generateState");
 const { generateUUIV4 } = require("../utils/generateUuidv4");
 const { sendEmail } = require("./email.service");
-const { generateAuthURL } = require("./oauth.service");
+const { generateOrgUserAuthURL } = require("./oauth.service");
 const { findOrgByOrgId } = require("./org.service");
 const { findUserByUserId } = require("./user.service");
+const SCOPES = require("../config/googleOAuthScopes");
 
 exports.findOneOrgUserAccountsById = async (org_user_account_id) => {
     return await OrgUserAccount.findOne({
@@ -74,7 +75,7 @@ exports.addOrgUserAccounts = async (org_id, user_id, emails) => {
         const state = generateState();
 
         //generate authurl
-        const authUrl = await generateAuthURL(org_user_account_id, state);
+        const authUrl = await generateOrgUserAuthURL(org_user_account_id, state, SCOPES.ORG_USER_ACCOUNT);
 
         //generate email subject and body
         const { emailSubject, emailBody } = await generateGoogleOAuthEmail(authUrl, org, user);

@@ -1,6 +1,7 @@
 const { createOAuth2Client } = require("../config/gOAuth");
 const { findOneOrgUserAccountsById, updateEmailAccoutAuthsRefreshToken, updateAuthenticatedStatus } = require("../services/org_user_account.service");
 const path = require("path");
+require('dotenv').config(); 
 
 exports.googleOAuthCallback = async (req, res) => {
     const { code, state, error } = req.query;
@@ -19,7 +20,7 @@ exports.googleOAuthCallback = async (req, res) => {
         if (orgUserAccount.EmailAccountAuth.state != expectedState) return res.status(400).json({ message: "Invalid state parameter" });
 
         //exchange the code for token
-        const oauth2client = await createOAuth2Client();
+        const oauth2client = await createOAuth2Client(process.env.GOOGLE_ORG_USER_REDIRECT_URI);
         const tokenResponse = await oauth2client.getToken(code);
         const tokens = tokenResponse.tokens;
 
@@ -37,3 +38,4 @@ exports.googleOAuthCallback = async (req, res) => {
         });
     }
 }
+
