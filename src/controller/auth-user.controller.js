@@ -7,7 +7,9 @@ const { generateUUIV4 } = require("../utils/generateUuidv4");
 const { generateUserAuthURL, verifyState } = require("../services/oauth.service");
 const { createOAuth2Client } = require("../config/gOAuth");
 const { google } = require("googleapis");
+const { sendVerificationEmail, verifyEmail } = require("../services/verification.service");
 require("dotenv").config(); 
+const path = require("path"); 
 
 exports.registerLocal = async (req, res) => {
     const {
@@ -33,13 +35,40 @@ exports.registerLocal = async (req, res) => {
     try {
         const result = await registerLocal(user_email, first_name, last_name, password, country, contact_number, job_title, privacy_consent_given); 
 
-        return res.status(201).json({ message: "New user created.", ...result })
+        //send verificaiton email. We'll only do this for registering using email. 
+        await sendVerificationEmail(result.user, result.userInfo);
+
+        return res.status(201).json({ message: "New user created. Please check your email to verify your account.", ...result })
 
     } catch (error) {
         return res.status(500).json({ message: 'Failed to register', error: error.message });
 
     }
 }
+
+exports.verifyEmail = async (req, res) => {
+    const { token } = req.params;
+
+    if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    try {
+        const userInfo = await verifyEmail(token);
+        // return res.status(200).json({
+        //     message: "Email verified successfully",
+        //     user_id: userInfo.user_id
+        // });
+        return res.sendFile(path.join(__dirname, "..", "public", "verified.html"));
+
+    } catch (error) {
+        return res.status(400).json({
+            message: "Email verification failed",
+            error: error.message
+        });
+    }
+};
+
 
 exports.loginLocal = async (req, res) => {
     const { user_email, password } = req.body;
@@ -50,6 +79,10 @@ exports.loginLocal = async (req, res) => {
 
     try {
         const user = await checkLoginCredentials(user_email, password);
+
+        if (!user.UserInfo.is_verified) {
+            return res.status(403).json({ message: "Please verify your email before logging in." });
+        }
 
         const token = jwt.sign({
             user_id: user.user_id,

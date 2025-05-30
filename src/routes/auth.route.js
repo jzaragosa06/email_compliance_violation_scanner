@@ -7,6 +7,8 @@ const auth_org_user_account = require("../controller/auth-org-user-account.contr
 router.post("/user/register/local", auth_user.registerLocal);
 router.post("/user/login/local", auth_user.loginLocal);
 
+router.get("/verify-email/:token", auth_user.verifyEmail);
+
 router.post("/user/:type/google", auth_user.googleAuth);
 router.get("/user/google/callback", auth_user.googleUserOAuthCallback);
 

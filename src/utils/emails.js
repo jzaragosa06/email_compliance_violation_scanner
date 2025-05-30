@@ -128,3 +128,46 @@ exports.generateEmailAnalysisReportEmail = (violationsCount, org) => {
 
   return { emailSubject, emailBody };
 };
+
+
+exports.generateVerificationEmail = (verificationUrl, user) => {
+  const emailSubject = "Verify Your MailSiever Account";
+  const mainColor = '#FE7743';
+  const secondaryColor = '#273F4F';
+
+  const emailBody = `
+    <div style="background-color: #EFEEEA; padding: 40px 0; font-family: Arial, sans-serif;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div style="background-color: ${secondaryColor}; color: white; padding: 24px 32px; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h2 style="margin: 0;">Welcome to MailSiever!</h2>
+            </div>
+
+            <div style="padding: 24px 32px;">
+                <p>Hello ${user.first_name} ${user.last_name},</p>
+
+                <p>Thank you for registering with MailSiever. To complete your registration and activate your account, please verify your email address by clicking the button below:</p>
+
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="${verificationUrl}" style="
+                        background-color: ${mainColor};
+                        color: white;
+                        padding: 14px 28px;
+                        text-decoration: none;
+                        font-size: 16px;
+                        font-weight: bold;
+                        border-radius: 8px;
+                        display: inline-block;">
+                        Verify Email Address
+                    </a>
+                </div>
+
+                <p>This verification link will expire in 24 hours.</p>
+                <p>If you didn't create an account with us, please ignore this email.</p>
+            </div>
+
+            ${exports.generateEmailSignature(mainColor, secondaryColor)}
+        </div>
+    </div>`;
+
+  return { emailSubject, emailBody };
+};
