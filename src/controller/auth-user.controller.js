@@ -80,9 +80,9 @@ exports.loginLocal = async (req, res) => {
     try {
         const user = await checkLoginCredentials(user_email, password);
 
-        if (!user.UserInfo.is_verified) {
-            return res.status(403).json({ message: "Please verify your email before logging in." });
-        }
+        // if (!user.UserInfo.is_verified) {
+        //     return res.status(403).json({ message: "Please verify your email before logging in." });
+        // }
 
         const token = jwt.sign({
             user_id: user.user_id,
