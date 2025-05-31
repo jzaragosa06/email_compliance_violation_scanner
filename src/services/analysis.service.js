@@ -5,6 +5,7 @@ const { findOneOrgUserAccountsByEmailAndOrgId } = require("./org_user_account.se
 const VIOLATION_RULES = require("../config/violationRules");
 const { addEmailViolation } = require("./violations.service");
 const { EmailAnalysisLog } = require("../models");
+const { getIsoUTCNow } = require("../utils/dates");
 
 // Entry Point
 exports.analyzeOrgUserAccounts = async (org_id, emails) => {
@@ -84,28 +85,44 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
     };
 };
 
-exports.updateLastAnalyzedTimestamp = async (org_user_account_id, transaction = null) => {
-    try {
-        const [updatedRows] = await EmailAnalysisLog.update(
-            {
-                last_analyzed: new Date(),
-            },
-            {
-                where: {
-                    org_user_account_id: org_user_account_id
-                },
-                returning: true, // Get the updated record
-                transaction
-            }
-        );
+// exports.updateLastAnalyzedTimestamp = async (org_user_account_id, transaction = null) => {
+//     try {
+//         const [updatedRows] = await EmailAnalysisLog.update(
+//             {
+//                 last_analyzed: getIsoUTCNow(),
+//             },
+//             {
+//                 where: {
+//                     org_user_account_id: org_user_account_id
+//                 },
+//                 returning: true, // Get the updated record
+//                 transaction
+//             }
+//         );
 
-        if (updatedRows === 0) {
-            throw new Error(`No analysis log found for org user account: ${org_user_account_id}`);
+//         if (updatedRows === 0) {
+//             throw new Error(`No analysis log found for org user account: ${org_user_account_id}`);
+//         }
+//     } catch (error) {
+//         console.error(`Failed to update last analyzed timestamp: ${error.message}`);
+//         throw new Error(`Failed to update analysis timestamp: ${error.message}`);
+//     }
+// };
+
+exports.updateLastAnalyzedTimestamp = async (org_user_account_id) => {
+    const analysisLog = await EmailAnalysisLog.findOne({
+        where: {
+            org_user_account_id: org_user_account_id
         }
-    } catch (error) {
-        console.error(`Failed to update last analyzed timestamp: ${error.message}`);
-        throw new Error(`Failed to update analysis timestamp: ${error.message}`);
-    }
+    });
+
+    if (!analysisLog) throw new Error("No analysis log found");
+
+    analysisLog.set({
+        last_analyzed: getIsoUTCNow(),
+    });
+    analysisLog.save();
+    return analysisLog;
 };
 
 

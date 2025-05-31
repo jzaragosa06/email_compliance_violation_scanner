@@ -1,4 +1,5 @@
 const { EmailViolations, Management, OrgUserAccount, ViolationEvidence, sequelize } = require("../models");
+const { getIsoUTCNow } = require("../utils/dates");
 const { generateUUIV4 } = require("../utils/generateUuidv4");
 
 exports.findEmailViolationsByOrgId = async (org_id) => {
@@ -56,6 +57,7 @@ exports.addEmailViolation = async (management_id, org_user_account_id, email_sub
                     email_violation_id: email_violation_id,
                     management_id: management_id,
                     org_user_account_id: org_user_account_id,
+                    created_at: getIsoUTCNow(), 
                 },
                 { transaction: t }
             );

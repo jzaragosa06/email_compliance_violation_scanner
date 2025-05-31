@@ -3,6 +3,7 @@ const { UserInfo } = require("../models");
 const { generateVerificationEmail } = require("../utils/emails");
 const { sendEmail } = require("./email.service");
 const crypto = require("crypto");
+const { getIsoUTCNow } = require("../utils/dates");
 
 exports.createVerificationToken = () => {
     return crypto.randomBytes(32).toString('hex');
@@ -15,7 +16,8 @@ exports.sendVerificationEmail = async (user, userInfo) => {
     // Save token and expiry
     await UserInfo.update({
         verification_token: token,
-        verification_token_expires: expires
+        verification_token_expires: expires,
+        updated_at: getIsoUTCNow(), 
     }, {
         where: { user_id: user.user_id }
     });

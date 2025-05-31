@@ -1,6 +1,6 @@
 const { ScheduledJob, Management } = require("../models")
-const { Sequelize } = require("sequelize");
 const cron = require('node-cron'); 
+const { getIsoUTCNow } = require("../utils/dates");
 
 exports.findScheduledJobByManagementId = async (management_id) => {
     const scheduled_job = await ScheduledJob.findOne({ where: { management_id: management_id } });
@@ -22,13 +22,13 @@ exports.updatedScheduledJob = async (management_id, scheduled_expression, is_act
 
     if (!scheduled_job) throw new Error("No scheduled job found");
 
-    const scheduledJobData = {
+    await scheduled_job.set({
         scheduled_expression: scheduled_expression,
         is_active: is_active,
-        send_email: send_email
-    };
-
-    await scheduled_job.set(scheduledJobData);
+        send_email: send_email,
+        updated_at: getIsoUTCNow(),
+    }
+    );
     await scheduled_job.save();
     return scheduled_job;
 }

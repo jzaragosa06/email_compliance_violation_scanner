@@ -1,4 +1,5 @@
 const { GoogleAuth } = require("../models");
+const { getCreatedUpdatedIsoUTCNow } = require("../utils/dates");
 const { generateUUIV4 } = require("../utils/generateUuidv4");
 const { createUser, findUserByEmail } = require("./user.service");
 const bcryptjs = require("bcryptjs");
@@ -8,10 +9,12 @@ exports.registerLocal = async (user_email, first_name, last_name, password, coun
     const user_id = generateUUIV4();
     const auth_id = generateUUIV4();
     const subscription_id = generateUUIV4();
+    const { created_at, updated_at } = getCreatedUpdatedIsoUTCNow(); 
 
     const userData = {
         user_id: user_id,
-        user_email: user_email
+        user_email: user_email,
+        created_at: created_at
     }
 
     const userInfoData = {
@@ -21,13 +24,16 @@ exports.registerLocal = async (user_email, first_name, last_name, password, coun
         country: country || null,
         contact_number: contact_number || null,
         job_title: job_title || null,
-        privacy_consent_given: privacy_consent_given || null
+        privacy_consent_given: privacy_consent_given || null,
+        created_at: created_at,
+        updated_at: updated_at, 
     }
 
     const userAuthData = {
         auth_id: auth_id,
         user_id: user_id,
         provider_name: 'local',
+        created_at: created_at,
     }
 
     const localAuthData = {
@@ -52,10 +58,13 @@ exports.registerWithGoogle = async (user_email, first_name, last_name, refresh_t
     const user_id = generateUUIV4();
     const auth_id = generateUUIV4();
     const subscription_id = generateUUIV4();
+    const { created_at, updated_at } = getCreatedUpdatedIsoUTCNow(); 
 
     const userData = {
         user_id: user_id,
-        user_email: user_email
+        user_email: user_email,
+        created_at: created_at, 
+
     }
 
     const userInfoData = {
@@ -63,12 +72,15 @@ exports.registerWithGoogle = async (user_email, first_name, last_name, refresh_t
         first_name: first_name,
         last_name: last_name,
         is_verified: true, 
+        created_at: created_at,
+        updated_at: updated_at, 
     }
 
     const userAuthData = {
         auth_id: auth_id,
         user_id: user_id,
         provider_name: 'google',
+        created_at: created_at
     }
 
     const localAuthData = {
@@ -109,7 +121,7 @@ exports.updateUserGoogleRefreshToken = async (auth_id, refresh_token) => {
     if (!googleAuth) throw new Error("Email account auth for google not found");
 
     googleAuth.set({
-        refresh_token: refresh_token
+        refresh_token: refresh_token, 
     });
     googleAuth.save();
     return googleAuth;

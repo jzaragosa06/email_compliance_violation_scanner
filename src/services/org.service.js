@@ -1,4 +1,5 @@
 const { sequelize, OrgUserAccount, Org, OrgInfo, Policy, Management, ScheduledJob } = require("../models");
+const { getCreatedUpdatedIsoUTCNow, getIsoUTCNow } = require("../utils/dates");
 
 const { generateUUIV4 } = require("../utils/generateUuidv4");
 
@@ -98,6 +99,7 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_phone, org
     const management_id = generateUUIV4();
     const org_email_policy_id = generateUUIV4();
     const scheduled_job_id = generateUUIV4();
+    const { created_at, updated_at } = getCreatedUpdatedIsoUTCNow(); 
 
 
     return await sequelize.transaction(async (t) => {
@@ -105,18 +107,17 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_phone, org
             {
                 org_id: org_id,
                 org_domain: org_domain,
+                created_at: created_at, 
             },
             { transaction: t }
         );
-
-        console.log('org', org);
-
 
         const management = await Management.create(
             {
                 management_id: management_id,
                 user_id: user_id,
                 org_id: org_id,
+                created_at: created_at,
             },
             { transaction: t }
         );
@@ -125,6 +126,8 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_phone, org
             {
                 scheduled_job_id: scheduled_job_id,
                 management_id: management_id,
+                created_at: created_at,
+                updated_at: updated_at, 
             },
             { transaction: t }
         ); 
@@ -138,6 +141,8 @@ exports.addOrg = async (user_id, org_domain, org_email, org_name, org_phone, org
                 org_description: org_description || null,
                 org_employee_count: org_employee_count || null,
                 org_logo: org_logo || null,
+                created_at: created_at,
+                updated_at: updated_at, 
             },
             { transaction: t }
         );
@@ -160,13 +165,14 @@ exports.updateOrgInfo = async (org_id, org_name, org_email, org_phone, org_descr
     if (!orgInfo) throw new Error("No organization info found");
 
     try {
-        orgInfo.set({
+        orgInfo({
             org_name: org_name,
             org_email: org_email,
             org_phone: org_phone,
             org_description: org_description,
             org_employee_count: org_employee_count,
-            org_logo: org_logo
+            org_logo: org_logo,
+            updated_at: getIsoUTCNow(), 
         });
         orgInfo.save();
         return orgInfo;

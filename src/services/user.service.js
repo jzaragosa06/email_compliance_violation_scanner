@@ -1,4 +1,5 @@
 const { User, UserInfo, UserAuth, sequelize, Subscription, Management, LocalAuth, GoogleAuth } = require("../models");
+const { getIsoUTCNow } = require("../utils/dates");
 
 exports.findAllUsers = async () => {
     const users = await User.findAll({
@@ -125,7 +126,8 @@ exports.updateUserInfo = async (user_id, first_name, last_name, country, contact
         last_name: last_name,
         country: country,
         contact_number: contact_number,
-        job_title: job_title
+        job_title: job_title,
+        updated_at: getIsoUTCNow(), 
     });
     userInfo.save();
     return userInfo;

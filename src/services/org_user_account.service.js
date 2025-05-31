@@ -7,6 +7,7 @@ const { generateOrgUserAuthURL } = require("./oauth.service");
 const { findOrgByOrgId } = require("./org.service");
 const { findUserByUserId } = require("./user.service");
 const SCOPES = require("../config/googleOAuthScopes");
+const { getIsoUTCNow, getCreatedUpdatedIsoUTCNow, isUtcDatetime } = require("../utils/dates");
 
 exports.findOneOrgUserAccountsById = async (org_user_account_id) => {
     return await OrgUserAccount.findOne({
@@ -77,6 +78,7 @@ exports.addOrgUserAccounts = async (org_id, user_id, accounts) => {
             const email_account_status_id = generateUUIV4();
             const analysis_log_id = generateUUIV4();
             const state = generateState();
+            const { created_at, updated_at } = getCreatedUpdatedIsoUTCNow(); 
 
             // Perform transactional creation of all related records
             const transactionResult = await sequelize.transaction(async (t) => {
@@ -84,23 +86,30 @@ exports.addOrgUserAccounts = async (org_id, user_id, accounts) => {
                     org_user_account_id,
                     org_id,
                     email,
+                    created_at 
                 }, { transaction: t, ignoreDuplicates: true });
 
                 const email_account_auth = await EmailAccountAuth.create({
                     email_account_auth_id,
                     org_user_account_id,
                     state,
+                    created_at,
+                    updated_at,
                 }, { transaction: t, ignoreDuplicates: true });
 
                 const email_account_status = await EmailAccountStatus.create({
                     email_account_status_id,
                     org_user_account_id,
+                    created_at,
+                    updated_at
                 }, { transaction: t, ignoreDuplicates: true });
 
                 const email_analysis_log = await EmailAnalysisLog.create({
                     analysis_log_id,
                     org_user_account_id,
-                    analysis_starting_date: analysis_starting_date ? new Date(analysis_starting_date) : new Date(),
+                    analysis_starting_date: analysis_starting_date ? analysis_starting_date : created_at,
+                    created_at,
+                    updated_at,
                 }, { transaction: t, ignoreDuplicates: true });
 
                 return {
@@ -130,13 +139,20 @@ exports.addOrgUserAccounts = async (org_id, user_id, accounts) => {
 
 exports.updateEmailAccoutAuthsRefreshToken = async (refresh_token, email_account_auth_id) => {
     return await EmailAccountAuth.update(
-        { refresh_token: refresh_token },
+        {
+            refresh_token: refresh_token,
+            updated_at: getIsoUTCNow(),
+        },
         { where: { email_account_auth_id: email_account_auth_id } });
 }
 
 exports.updateAuthenticatedStatus = async (org_user_account_id) => {
     return await EmailAccountStatus.update(
-        { is_authenticated: 1 },
+        {
+            is_authenticated: 1,
+            updated_at: getIsoUTCNow(),
+
+        },
         { where: { org_user_account_id: org_user_account_id } }
     );
 }
@@ -167,4 +183,29 @@ exports.cleanForNewOrgUserAccounts = async (org_id, emails) => {
     const newEmails = emails.filter(email => !existingEmails.has(email));
     return newEmails;
 
+}
+
+exports.updateAnalysisStartingDateFromAnalysisLogs = async (org_user_account_id, analysis_starting_date) => {
+    const analysisLog = await EmailAnalysisLog.findOne({
+        where: {
+            org_user_account_id: org_user_account_id
+        }
+    });
+
+    if (!analysisLog) throw new Error("No analysis log found");
+
+    analysisLog.set({
+        analysis_starting_date: analysis_starting_date,
+        updated_at: getIsoUTCNow(),
+    });
+    analysisLog.save();
+    return analysisLog;
+}
+
+exports.validateAccountsAnalysisStartingDate = (accounts) => {
+    for (const account of accounts) {
+        if (!isUtcDatetime(account.analysis_starting_date)) {
+            throw new Error("Invalid ISO UTC format");
+        }
+    }
 }
