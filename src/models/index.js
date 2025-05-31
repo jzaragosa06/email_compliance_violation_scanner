@@ -69,7 +69,7 @@ OrgUserAccount.hasOne(EmailAccountStatus, { foreignKey: 'org_user_account_id', o
 EmailAccountStatus.belongsTo(OrgUserAccount, { foreignKey: 'org_user_account_id' });
 
 OrgUserAccount.hasOne(EmailAnalysisLog, { foreignKey: 'org_user_account_id', onDelete: 'CASCADE' });
-EmailAnalysisLog.belongsTo(OrgUserAccount, { foreignKey: 'org_user_accout_id' });
+EmailAnalysisLog.belongsTo(OrgUserAccount, { foreignKey: 'org_user_account_id' });
 
 OrgUserAccount.hasMany(EmailViolations, { foreignKey: 'org_user_account_id', onDelete: 'CASCADE' });
 EmailViolations.belongsTo(OrgUserAccount, { foreignKey: 'org_user_account_id' });

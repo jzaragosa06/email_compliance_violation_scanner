@@ -1,6 +1,6 @@
 const { analyzeOrgUserAccounts } = require("../services/analysis.service");
 const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById, updateOrgInfo } = require("../services/org.service");
-const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts } = require("../services/org_user_account.service");
+const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -51,8 +51,6 @@ exports.addOrg = async (req, res) => {
     //this involve adding into the Management first and then into the org
     const user_id = req.user.user_id; //we will extract the user_id from the token.
 
-    console.log('user_id', user_id);
-
     const { org_domain, org_email, org_name, org_phone, org_description, org_employee_count, org_logo } = req.body;
 
     //we only require the org_domain, org_name
@@ -89,14 +87,16 @@ exports.addOrgUserAccounts = async (req, res) => {
         accounts = [accounts];
     }
 
-
-    const emails = accounts.map(account => account.email);
-    const uniqueEmails = [...new Set(emails)];
-
-    const validEmails = await cleanForNewOrgUserAccounts(org_id, uniqueEmails);
-    const validAccounts = accounts.filter(account => validEmails.includes(account.email));
-
     try {
+        validateAccountsAnalysisStartingDate(accounts); 
+
+        const emails = accounts.map(account => account.email);
+        const uniqueEmails = [...new Set(emails)];
+
+        const validEmails = await cleanForNewOrgUserAccounts(org_id, uniqueEmails);
+        const validAccounts = accounts.filter(account => validEmails.includes(account.email));
+
+
         const results = await addOrgUserAccounts(org_id, user_id, validAccounts);
         res.status(201).json({ message: "Org user accounts added successfully", results });
     } catch (error) {
@@ -116,6 +116,23 @@ exports.deleteOneOrgUserAccounById = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
+}
+
+exports.updateAnalysisStartingDate = async (req, res) => {
+    const { org_id, org_user_account_id } = req.params;
+    const { analysis_starting_date } = req.body;
+
+    if (!org_id || !org_user_account_id || !analysis_starting_date) {
+        return req.status(400).json({ message: "The client sent a malformed or incomplete request" });
+    }
+
+    try {
+        const analysisLog = await updateAnalysisStartingDateFromAnalysisLogs(org_user_account_id, analysis_starting_date);
+        return res.status(200).json({ message: "Analysis starting date updated successfully", analysisLog })
+    } catch (error) {
+        return res.status(500).json({ message: "Failed to update nalysis starting date", error: error.message });
+    }
+
 }
 
 exports.analyzeOrgUserAccounts = async (req, res) => {
