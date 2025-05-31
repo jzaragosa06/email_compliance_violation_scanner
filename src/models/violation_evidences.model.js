@@ -25,12 +25,6 @@ const ViolationEvidence = sequelize.define(
             type: DataTypes.JSON,
             allowNull: true,
         },
-        created_at: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW,
-        },
-
     },
     {
         tableName: "violation_evidences",

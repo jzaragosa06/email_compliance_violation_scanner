@@ -25,7 +25,17 @@ const EmailAccountAuth = sequelize.define(
         refresh_token: {
             type: DataTypes.STRING,
             allowNull: true,
-        }
+        },
+        created_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
+        updated_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
     },
     {
         tableName: 'email_account_auth',

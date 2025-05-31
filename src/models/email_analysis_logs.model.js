@@ -25,7 +25,17 @@ const EmailAnalysisLog = sequelize.define(
         last_analyzed: {
             type: DataTypes.DATE,
             allowNull: true,
-        }
+        },
+        created_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
+        updated_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
     },
     {
         tableName: 'email_analysis_logs',

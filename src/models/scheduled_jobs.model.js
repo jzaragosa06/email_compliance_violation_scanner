@@ -29,7 +29,17 @@ const ScheduledJob = sequelize.define(
         send_email: {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
-        }
+        },
+        created_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
+        updated_at: {
+            type: DataTypes.DATE(),
+            allowNull: false,
+            defaultValue: DataTypes.NOW(),
+        },
     },
     {
         tableName: 'scheduled_jobs',

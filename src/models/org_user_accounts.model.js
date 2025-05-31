@@ -27,11 +27,6 @@ const OrgUserAccount = sequelize.define(
             allowNull: false,
             defaultValue: DataTypes.NOW(),
         },
-        updated_at: {
-            type: DataTypes.DATE(),
-            allowNull: false,
-            defaultValue: DataTypes.NOW(),
-        },
     },
     {
         tableName: 'org_user_accounts',
