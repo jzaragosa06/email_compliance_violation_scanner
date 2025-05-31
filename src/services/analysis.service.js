@@ -4,6 +4,7 @@ const { getAccessToken } = require("./oauth.service");
 const { findOneOrgUserAccountsByEmailAndOrgId } = require("./org_user_account.service");
 const VIOLATION_RULES = require("../config/violationRules");
 const { addEmailViolation } = require("./violations.service");
+const { EmailAnalysisLog } = require("../models");
 
 // Entry Point
 exports.analyzeOrgUserAccounts = async (org_id, emails) => {
@@ -26,7 +27,14 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
                 orgUserAccount.EmailAccountAuth.refresh_token
             );
 
-            const messages = await fetchEmailList(gmailClient, 'in:inbox');
+            //fetch the start date of analysis
+            const startDate = orgUserAccount.EmailAnalysisLog?.last_analyzed || orgUserAccount.EmailAnalysisLog.analysis_starting_date;
+
+            if (!startDate) {
+                throw new Error(`No valid analysis start date for email: ${email}`);
+            }
+
+            const messages = await fetchEmailList(gmailClient, 'in:inbox', startDate);
 
             console.log('messages: ', messages);
 
@@ -34,8 +42,6 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
             for (const message of messages) {
                 const rawEmail = await fetchEmailDetails(gmailClient, message.id);
                 const parsedEmail = parseEmail(rawEmail);
-
-                // console.log(`parsed email of ${message.id} : ${JSON.stringify(parsedEmail, null, 2)}`);
 
                 const violations = await compareEmailAgainstPolicyRules(parsedEmail);
 
@@ -53,8 +59,10 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
                         email: parsedEmail.subject,
                     }); 
                 }
-
             }
+
+            await this.updateLastAnalyzedTimestamp(orgUserAccount.org_user_account_id); 
+
         } catch (error) {
             withErrors.push(
                 {
@@ -76,6 +84,29 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
     };
 };
 
+exports.updateLastAnalyzedTimestamp = async (org_user_account_id, transaction = null) => {
+    try {
+        const [updatedRows] = await EmailAnalysisLog.update(
+            {
+                last_analyzed: new Date(),
+            },
+            {
+                where: {
+                    org_user_account_id: org_user_account_id
+                },
+                returning: true, // Get the updated record
+                transaction
+            }
+        );
+
+        if (updatedRows === 0) {
+            throw new Error(`No analysis log found for org user account: ${org_user_account_id}`);
+        }
+    } catch (error) {
+        console.error(`Failed to update last analyzed timestamp: ${error.message}`);
+        throw new Error(`Failed to update analysis timestamp: ${error.message}`);
+    }
+};
 
 
 //email has subject, from, to, date, and body, and attatchement (an array maybe);

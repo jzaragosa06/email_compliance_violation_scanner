@@ -76,25 +76,29 @@ exports.addOrg = async (req, res) => {
 //org user accounts
 //we will require the emails to be in array format so that we don't have to create
 //a separate controller for adding a single email. 
+//we'll have an array of object {email: "", analysis_starting_date: ""}
 exports.addOrgUserAccounts = async (req, res) => {
     const { org_id } = req.params;
     const { user_id } = req.user;
-    let { emails } = req.body;
+    let { accounts } = req.body;
 
-    if (!org_id || !emails) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
+    if (!org_id || !accounts) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
 
     //convert to array
-    if (!Array.isArray(emails)) {
-        emails = [emails];
+    if (!Array.isArray(accounts)) {
+        accounts = [accounts];
     }
 
-    //clean for duplicates. Set
-    emails = [...new Set(emails)];
-    emails = await cleanForNewOrgUserAccounts(org_id, emails); 
+
+    const emails = accounts.map(account => account.email);
+    const uniqueEmails = [...new Set(emails)];
+
+    const validEmails = await cleanForNewOrgUserAccounts(org_id, uniqueEmails);
+    const validAccounts = accounts.filter(account => validEmails.includes(account.email));
 
     try {
-        const result = await addOrgUserAccounts(org_id, user_id, emails);
-        res.status(201).json({ message: "Org user accounts added successfully", ...result });
+        const results = await addOrgUserAccounts(org_id, user_id, validAccounts);
+        res.status(201).json({ message: "Org user accounts added successfully", results });
     } catch (error) {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }

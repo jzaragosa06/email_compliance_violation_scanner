@@ -18,6 +18,10 @@ const EmailAnalysisLog = sequelize.define(
                 key: 'org_user_account_id',
             }
         },
+        analysis_starting_date: {
+            type: DataTypes.DATE(),
+            allowNull: true,
+        }, 
         last_analyzed: {
             type: DataTypes.DATE,
             allowNull: true,

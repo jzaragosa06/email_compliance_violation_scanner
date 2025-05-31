@@ -57,78 +57,76 @@ exports.findAllAuthenticatedOrgUserAccount = async (org_id) => {
     return org_user_accounts;
 }
 
-exports.addOrgUserAccounts = async (org_id, user_id, emails) => {
+exports.addOrgUserAccounts = async (org_id, user_id, accounts) => {
+// Validate organization and user existence
     const org = await findOrgByOrgId(org_id);
-    const user = await findUserByUserId(user_id);
-
     if (!org) throw new Error('Organization not found');
+
+    const user = await findUserByUserId(user_id);
     if (!user) throw new Error('User not found');
 
-    //emails is an array of string. we can use the map to
-    //create a array of object, each representing the data for manual insert. 
-    //Data are consolidated first to ensure referential integrity of ids.
+    const results = [];
 
-    //this will return a array of promises. Wrap to Promise.all to resolve them 
-    //first before returning. 
-    const emailDatas = await Promise.all(emails.map(async (email) => {
-        const org_user_account_id = generateUUIV4();
-        const state = generateState();
+    for (const account of accounts) {
+        const { email, analysis_starting_date } = account;
 
-        //generate authurl
-        const authUrl = await generateOrgUserAuthURL(org_user_account_id, state, SCOPES.ORG_USER_ACCOUNT);
+        try {
+            // Pre-generate all UUIDs and state
+            const org_user_account_id = generateUUIV4();
+            const email_account_auth_id = generateUUIV4();
+            const email_account_status_id = generateUUIV4();
+            const analysis_log_id = generateUUIV4();
+            const state = generateState();
 
-        //generate email subject and body
-        const { emailSubject, emailBody } = await generateGoogleOAuthEmail(authUrl, org, user);
+            // Perform transactional creation of all related records
+            const transactionResult = await sequelize.transaction(async (t) => {
+                const org_user_account = await OrgUserAccount.create({
+                    org_user_account_id,
+                    org_id,
+                    email,
+                }, { transaction: t, ignoreDuplicates: true });
 
-        //then send an email
-        //send authurl to the org_user_account using email
-        await sendEmail(email, emailSubject, emailBody);
+                const email_account_auth = await EmailAccountAuth.create({
+                    email_account_auth_id,
+                    org_user_account_id,
+                    state,
+                }, { transaction: t, ignoreDuplicates: true });
 
-        return {
-            org_user_account_id: org_user_account_id,
-            org_id: org_id,
-            email: email,
-            email_account_auth_id: generateUUIV4(),
-            state: state,
-            analysis_log_id: generateUUIV4(),
-            authUrl: authUrl
+                const email_account_status = await EmailAccountStatus.create({
+                    email_account_status_id,
+                    org_user_account_id,
+                }, { transaction: t, ignoreDuplicates: true });
+
+                const email_analysis_log = await EmailAnalysisLog.create({
+                    analysis_log_id,
+                    org_user_account_id,
+                    analysis_starting_date: analysis_starting_date ? new Date(analysis_starting_date) : new Date(),
+                }, { transaction: t, ignoreDuplicates: true });
+
+                return {
+                    org_user_account,
+                    email_account_auth,
+                    email_account_status,
+                    email_analysis_log
+                };
+            });
+
+            // Generate OAuth URL and email content
+            const authUrl = await generateOrgUserAuthURL(org_user_account_id, state, SCOPES.ORG_USER_ACCOUNT);
+            const { emailSubject, emailBody } = await generateGoogleOAuthEmail(authUrl, org, user);
+
+            // Send the email
+            await sendEmail(email, emailSubject, emailBody);
+
+            results.push(transactionResult);
+        } catch (error) {
+            console.error(`Failed to add ${email}: ${error.message}`);
         }
-    }));
+    }
 
-    console.log('emaildatas: ', emailDatas);
-
-
-    const org_user_account_data = emailDatas.map((emailData) => ({
-        org_user_account_id: emailData.org_user_account_id,
-        org_id: emailData.org_id,
-        email: emailData.email,
-    }));
-
-    const email_account_auth_data = emailDatas.map((emailData) => ({
-        email_account_auth_id: emailData.email_account_auth_id,
-        org_user_account_id: emailData.org_user_account_id,
-        state: emailData.state,
-    }));
-
-    const email_account_status_data = emailDatas.map((emailData) => ({
-        email_account_status_id: emailData.email_account_status_id,
-        org_user_account_id: emailData.org_user_account_id,
-    }));
-
-    const email_analysis_log_data = emailDatas.map((emailData) => ({
-        analysis_log_id: emailData.analysis_log_id,
-        org_user_account_id: emailData.org_user_account_id,
-    }));
-
-    return await sequelize.transaction(async (t) => {
-        const org_user_account = await OrgUserAccount.bulkCreate(org_user_account_data, { transaction: t, ignoreDuplicates: true },);
-        const email_account_auth = await EmailAccountAuth.bulkCreate(email_account_auth_data, { transaction: t, ignoreDuplicates: true });
-        const email_account_status = await EmailAccountStatus.bulkCreate(email_account_status_data, { transaction: t, ignoreDuplicates: true });
-        const email_analysis_log = await EmailAnalysisLog.bulkCreate(email_analysis_log_data, { transaction: t, ignoreDuplicates: true });
-
-        return { org_user_account, email_account_auth, email_account_status, email_analysis_log };
-    });
+    return results;
 };
+
 
 exports.updateEmailAccoutAuthsRefreshToken = async (refresh_token, email_account_auth_id) => {
     return await EmailAccountAuth.update(
