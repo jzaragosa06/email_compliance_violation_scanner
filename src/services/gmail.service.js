@@ -14,34 +14,14 @@ exports.createGmailClient = async (access_token, refresh_token) => {
     return gmailClient;
 }
 
-// Fetch message list based on query
-// exports.fetchEmailList = async (gmailClient, query) => {
-//     const res = await gmailClient.users.messages.list({
-//         userId: 'me',
-//         maxResults: 10,
-//         q: query,
-//     });
-
-//     return res.data.messages || [];
-// };
-
-// // Fetch full message details
-// exports.fetchEmailDetails = async (gmailClient, messageId) => {
-//     const res = await gmailClient.users.messages.get({
-//         userId: 'me',
-//         id: messageId,
-//         format: 'full',
-//     });
-
-//     return res.data;
-// };
-
-exports.fetchEmailList = async (gmailClient, query) => {
+exports.fetchEmailList = async (gmailClient, query, startDate) => {
     try {
+        const formattedDate = new Date(startDate).toISOString().split('T')[0].replace(/-/g, '/');
+        
         const res = await gmailClient.users.messages.list({
             userId: 'me',
             maxResults: 10,
-            q: query,
+            q: `${query} after:${formattedDate}`,
         });
         return res.data.messages || [];
     } catch (error) {
