@@ -62,6 +62,7 @@ exports.registerWithGoogle = async (user_email, first_name, last_name, refresh_t
         user_id: user_id,
         first_name: first_name,
         last_name: last_name,
+        is_verified: true, 
     }
 
     const userAuthData = {
