@@ -1,11 +1,25 @@
 const { deleteOneOrgById, findOrgsByUserID } = require("../services/org.service");
-const { findAllUsers, updateUserInfo } = require("../services/user.service");
+const { findAllUsers, updateUserInfo, userInfo } = require("../services/user.service");
 
 exports.findAllUsers = async (req, res) => {
     const users = await findAllUsers();
     return res.status(200).json({ message: "User retrieved successfully", users });
 }
 
+exports.userInfo = async (req, res) => {
+    const { user_id } = req.user;
+
+    try {
+        const user = await userInfo(user_id);
+
+        if (!user) return res.status(404).json({ message: "User nout found" });
+
+        return res.status(200).json({ message: "User info retrieved successfully", user });
+    } catch (error) {
+        return res.status(404).json({ message: "User nout found", error: error.message });
+    }
+
+}
 
 exports.findOrgsManageByUser = async (req, res) => {
     const { user_id } = req.user;

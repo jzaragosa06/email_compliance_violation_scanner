@@ -1,3 +1,4 @@
+const { where } = require("sequelize");
 const { EmailViolations, Management, OrgUserAccount, ViolationEvidence, sequelize } = require("../models");
 const { getIsoUTCNow } = require("../utils/dates");
 const { generateUUIV4 } = require("../utils/generateUuidv4");
@@ -26,21 +27,20 @@ exports.findEmailViolationsByOrgId = async (org_id) => {
 };
 
 exports.findEmailViolationByOrgUserAccountId = async (org_user_account_id) => {
-    return await OrgUserAccount.findByPk(org_user_account_id,
+    return await EmailViolations.findAll(
         {
+            where: {
+                org_user_account_id: org_user_account_id,
+            },
             include: [
                 {
-                    model: EmailViolations,
-                    include: [
-                        {
-                            model: ViolationEvidence,
-                        }
-                    ]
+                    model: ViolationEvidence,
                 }
             ]
         }
     )
 }
+
 
 exports.addEmailViolation = async (management_id, org_user_account_id, email_subject, evidence_tag) => {
     if (!management_id || !org_user_account_id) {
@@ -76,4 +76,16 @@ exports.addEmailViolation = async (management_id, org_user_account_id, email_sub
     } catch (error) {
         throw new Error(`Failed to add email viollation: ${error.message}`)
     }
+}
+
+exports.updateViolationStatus = async (email_violation_id, is_confirmed_violation) => {
+    const emailViolation = await EmailViolations.findByPk(email_violation_id);
+
+    if (!emailViolation) throw new Error('No email violation record found');
+
+    emailViolation.set({
+        is_confirmed_violation: is_confirmed_violation,
+    });
+    emailViolation.save();
+    return emailViolation;
 }

@@ -27,6 +27,19 @@ exports.findAllUsers = async () => {
     return users;
 }
 
+exports.userInfo = async (user_id) => {
+    return await User.findOne(
+        {
+            where: { user_id: user_id },
+            include: [
+                {
+                    model: UserInfo,
+                }
+            ]
+        }
+    )
+}
+
 exports.findUserByEmail = async (user_email) => {
     const user = await User.findOne({
         where: { user_email: user_email },

@@ -23,6 +23,9 @@ exports.registerLocal = async (req, res) => {
         privacy_consent_given
     } = req.body;
 
+    console.log('body', JSON.stringify(req.body, null, 2));
+
+
     if (!user_email || !first_name || !last_name || !password) {
         return res.status(400).json({ message: "The client sent a malformed or incomplete request" })
     }

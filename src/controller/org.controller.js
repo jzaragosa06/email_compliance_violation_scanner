@@ -1,6 +1,6 @@
 const { analyzeOrgUserAccounts } = require("../services/analysis.service");
 const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById, updateOrgInfo } = require("../services/org.service");
-const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate } = require("../services/org_user_account.service");
+const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate, findAllOrgUserAccounts } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -76,6 +76,9 @@ exports.addOrg = async (req, res) => {
 //a separate controller for adding a single email. 
 //we'll have an array of object {email: "", analysis_starting_date: ""}
 exports.addOrgUserAccounts = async (req, res) => {
+    console.log('user accounts body: ', JSON.stringify(req.body, null, 2));
+
+
     const { org_id } = req.params;
     const { user_id } = req.user;
     let { accounts } = req.body;
@@ -97,8 +100,8 @@ exports.addOrgUserAccounts = async (req, res) => {
         const validAccounts = accounts.filter(account => validEmails.includes(account.email));
 
 
-        const results = await addOrgUserAccounts(org_id, user_id, validAccounts);
-        res.status(201).json({ message: "Org user accounts added successfully", results });
+        const result = await addOrgUserAccounts(org_id, user_id, validAccounts);
+        res.status(201).json({ message: "Org user accounts added successfully", accounts: result });
     } catch (error) {
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
@@ -119,10 +122,10 @@ exports.deleteOneOrgUserAccounById = async (req, res) => {
 }
 
 exports.updateAnalysisStartingDate = async (req, res) => {
-    const { org_id, org_user_account_id } = req.params;
+    const { org_user_account_id } = req.params;
     const { analysis_starting_date } = req.body;
 
-    if (!org_id || !org_user_account_id || !analysis_starting_date) {
+    if (!org_user_account_id || !analysis_starting_date) {
         return req.status(400).json({ message: "The client sent a malformed or incomplete request" });
     }
 
@@ -203,4 +206,18 @@ exports.updateOrgInfo = async (req, res) => {
         return res.status(500).json({ message: 'Failed to update organization info', error: error.message });
 
     }
+}
+
+exports.findAllOrgUserAccounts = async (req, res) => {
+    const { org_id } = req.params;
+
+    try {
+
+        const org_user_accounts = await findAllOrgUserAccounts(org_id);
+        return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
+    } catch (error) {
+        return res.status(200).json({ message: "Accounts failed to retrieved", error: error.message });
+
+    }
+
 }

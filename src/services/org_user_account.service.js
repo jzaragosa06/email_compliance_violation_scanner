@@ -209,3 +209,25 @@ exports.validateAccountsAnalysisStartingDate = (accounts) => {
         }
     }
 }
+
+exports.findAllOrgUserAccounts = async (org_id) => {
+    const org_user_accounts = await OrgUserAccount.findAll({
+        where: {
+            org_id: org_id,
+        },
+        include: [
+            {
+                model: EmailAccountAuth,
+
+            },
+            {
+                model: EmailAccountStatus,
+            },
+            {
+                model: EmailAnalysisLog,
+            }
+        ]
+    });
+
+    return org_user_accounts;
+}
