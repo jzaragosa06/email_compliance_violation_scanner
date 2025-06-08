@@ -8,6 +8,7 @@ const { findOrgByOrgId } = require("./org.service");
 const { findUserByUserId } = require("./user.service");
 const SCOPES = require("../config/googleOAuthScopes");
 const { getIsoUTCNow, getCreatedUpdatedIsoUTCNow, isUtcDatetime } = require("../utils/dates");
+const { Op } = require("sequelize");
 
 exports.findOneOrgUserAccountsById = async (org_user_account_id) => {
     return await OrgUserAccount.findOne({
@@ -230,4 +231,48 @@ exports.findAllOrgUserAccounts = async (org_id) => {
     });
 
     return org_user_accounts;
+}
+
+exports.findOrgUserAccount = async (org_id, query) => {
+    const org_user_accounts = await OrgUserAccount.findAll({
+        where: {
+            org_id: {
+                [Op.eq]: org_id,
+            },
+            email: {
+                [Op.like]: `%${query}%`
+            }
+        },
+        include: [
+            {
+                model: EmailAccountAuth,
+
+            },
+            {
+                model: EmailAccountStatus,
+            },
+            {
+                model: EmailAnalysisLog,
+            }
+        ]
+    });
+
+    return org_user_accounts;
+}
+
+exports.updateActiveAccountStatus = async (org_user_account_id, is_active) => {
+    const emailAccountStatus = await EmailAccountStatus.findOne({
+        where: {
+            org_user_account_id: org_user_account_id
+        }
+    });
+
+    if (!emailAccountStatus) throw new Error("No accounts found");
+
+    emailAccountStatus.set({
+        is_active: is_active,
+    });
+
+    emailAccountStatus.save();
+    return emailAccountStatus;
 }

@@ -30,6 +30,7 @@ sequelize.sync();
 // i.e., just await initializeEmailAnalysisJobs();
 //but will work on mjs. 
 (async () => {
+    await sequelize.sync(); 
     await initializeEmailAnalysisJobs();
 })();
 

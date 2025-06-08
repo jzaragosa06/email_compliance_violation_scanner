@@ -1,6 +1,6 @@
 const { analyzeOrgUserAccounts } = require("../services/analysis.service");
 const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById, updateOrgInfo } = require("../services/org.service");
-const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate, findAllOrgUserAccounts } = require("../services/org_user_account.service");
+const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate, findAllOrgUserAccounts, findOrgUserAccount } = require("../services/org_user_account.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -208,16 +208,35 @@ exports.updateOrgInfo = async (req, res) => {
     }
 }
 
-exports.findAllOrgUserAccounts = async (req, res) => {
+// exports.findAllOrgUserAccounts = async (req, res) => {
+//     const { org_id } = req.params;
+
+//     try {
+
+//         const org_user_accounts = await findAllOrgUserAccounts(org_id);
+//         return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
+//     } catch (error) {
+//         return res.status(200).json({ message: "Accounts failed to retrieved", error: error.message });
+
+//     }
+
+// }
+
+exports.findOrgUserAccounts = async (req, res) => {
     const { org_id } = req.params;
+    const { query } = req.query;
 
     try {
-
-        const org_user_accounts = await findAllOrgUserAccounts(org_id);
-        return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
+        if (query) {
+            //search
+            const org_user_accounts = await findOrgUserAccount(org_id, query);
+            return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
+        }
+        else {
+            const org_user_accounts = await findAllOrgUserAccounts(org_id);
+            return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
+        }
     } catch (error) {
         return res.status(200).json({ message: "Accounts failed to retrieved", error: error.message });
-
     }
-
 }

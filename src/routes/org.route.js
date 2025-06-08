@@ -14,13 +14,17 @@ router.patch("/:org_id", authenticateToken, org.updateOrgInfo);
 router.post("/:org_id/user-accounts", authenticateToken, org.addOrgUserAccounts);
 router.delete("/:org_id/user-accounts/:org_user_account_id", authenticateToken, org.deleteOneOrgUserAccounById);
 
-router.get('/:org_id/user-accounts', authenticateToken, org.findAllOrgUserAccounts);
+// router.get('/:org_id/user-accounts', authenticateToken, org.findAllOrgUserAccounts);
+// router.get('/:org_id/user-accounts/search', authenticateToken, org.findOrgUserAccounts);
+router.get('/:org_id/user-accounts', authenticateToken, org.findOrgUserAccounts);
 
-router.patch("/user-accounts/:org_user_account_id/analysis-starting-date", org.updateAnalysisStartingDate)
+router.patch("/user-accounts/:org_user_account_id/analysis-starting-date", authenticateToken, org.updateAnalysisStartingDate)
+router.patch("/user-accounts/:org_user_account_id/update-account-status", authenticateToken, orgUserAccount.updateActiveAccountStatus)
 
 router.post("/:org_id/user-accounts/analyze", authenticateToken, org.analyzeOrgUserAccounts);
 router.get("/:org_id/user-accounts/analyze-all-authenticated-accounts", authenticateToken, org.analyzeAllAuthenticatedOrgUserAccounts) //this is triggered by button or jobs
 
 router.get("/:org_id/user-accounts/:org_user_account_id/violations", authenticateToken, orgUserAccount.findOrgUserAccountVilolations);
 router.patch("/user-accounts/violations/:email_violation_id/update-status", authenticateToken, orgUserAccount.updateViolationStatus);
+
 module.exports = router; 
