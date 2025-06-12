@@ -1,6 +1,8 @@
 const { analyzeOrgUserAccounts } = require("../services/analysis.service");
+const { extractManagementId } = require("../services/management.service");
 const { findOrgByDomain, findOrgByOrgId, findAllOrgs, addOrg, deleteOneOrgById, updateOrgInfo } = require("../services/org.service");
 const { addOrgUserAccounts, deleteOneOrgUserAccounById, findAllAuthenticatedOrgUserAccount, cleanForNewOrgUserAccounts, updateAnalysisStartingDateFromAnalysisLogs, validateAccountsAnalysisStartingDate, findAllOrgUserAccounts, findOrgUserAccount } = require("../services/org_user_account.service");
+const { findViolationsHistories } = require("../services/violations.service");
 
 //we don't include the org user emails
 exports.findAllOrgs = async (req, res) => {
@@ -229,5 +231,21 @@ exports.findOrgUserAccounts = async (req, res) => {
         }
     } catch (error) {
         return res.status(200).json({ message: "Accounts failed to retrieved", error: error.message });
+    }
+}
+
+exports.findViolationHistories = async (req, res) => {
+    const { org_id } = req.params;
+
+    if (!org_id) return res.status(400).json({ message: "Client sent a malformed request" });
+
+    try {
+        const management_id = await extractManagementId(org_id);
+        const histories = await findViolationsHistories(management_id);
+        
+        return res.status(200).json({ message: "history retrieved successfully", histories })
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ message: "Failed to retrieve history", error: error.message });
     }
 }

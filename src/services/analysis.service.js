@@ -6,6 +6,7 @@ const VIOLATION_RULES = require("../config/violationRules");
 const { addEmailViolation } = require("./violations.service");
 const { EmailAnalysisLog } = require("../models");
 const { getIsoUTCNow } = require("../utils/dates");
+const { generateUUIV4 } = require("../utils/generateUuidv4");
 
 // Entry Point
 exports.analyzeOrgUserAccounts = async (org_id, emails) => {
@@ -39,7 +40,7 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
 
             console.log('messages: ', messages);
 
-
+            const analysis_run_at = getIsoUTCNow();  
             for (const message of messages) {
                 const rawEmail = await fetchEmailDetails(gmailClient, message.id);
                 const parsedEmail = parseEmail(rawEmail);
@@ -47,10 +48,10 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
                 const violations = await compareEmailAgainstPolicyRules(parsedEmail);
 
                 if (violations?.length) {
-                    
                     const result = await addEmailViolation(
                         management.management_id,
                         orgUserAccount.org_user_account_id,
+                        analysis_run_at, 
                         parsedEmail.subject,
                         violations.map(v => v.type),
                     );

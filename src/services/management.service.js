@@ -115,6 +115,14 @@ exports.fetchActiveScheduledJob = async () => {
     return activeJobs;
 }
 
+exports.extractManagementId = async (org_id) => {
+    const management = await Management.findOne({ where: { org_id: org_id } });
+
+    if (!management) throw new Error("No management found");
+
+    return management.management_id;
+}
+
 // exports.fetchActiveScheduledJob = async () => {
 //     const jobs = await Management.findAll({
 //         attributes: [

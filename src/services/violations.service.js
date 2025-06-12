@@ -42,7 +42,7 @@ exports.findEmailViolationByOrgUserAccountId = async (org_user_account_id) => {
 }
 
 
-exports.addEmailViolation = async (management_id, org_user_account_id, email_subject, evidence_tag) => {
+exports.addEmailViolation = async (management_id, org_user_account_id, analysis_run_at, email_subject, evidence_tag) => {
     if (!management_id || !org_user_account_id) {
         throw new Error('Missing required parameters');
     }
@@ -57,6 +57,7 @@ exports.addEmailViolation = async (management_id, org_user_account_id, email_sub
                     email_violation_id: email_violation_id,
                     management_id: management_id,
                     org_user_account_id: org_user_account_id,
+                    analysis_run_at: analysis_run_at, 
                     created_at: getIsoUTCNow(), 
                 },
                 { transaction: t }
@@ -88,4 +89,21 @@ exports.updateViolationStatus = async (email_violation_id, is_confirmed_violatio
     });
     emailViolation.save();
     return emailViolation;
+}
+
+exports.findViolationsHistories = async (management_id) => {
+    const histories = await EmailViolations.findAll({
+        attributes: [
+            'analysis_run_at',
+            [sequelize.fn('COUNT', sequelize.col('analysis_run_at')), 'violationCount'],
+        ],
+        where: { management_id },
+        group: ['analysis_run_at'],
+        logging: console.log,
+    });
+
+    console.log('histories:', histories);
+
+
+    return histories;
 }
