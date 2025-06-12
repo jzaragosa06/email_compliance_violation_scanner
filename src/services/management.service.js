@@ -34,6 +34,48 @@ exports.updatedScheduledJob = async (management_id, scheduled_expression, is_act
 }
 
 
+exports.updateRecievEmailReport = async (management_id, send_email) => {
+    let scheduled_job = await this.findScheduledJobByManagementId(management_id);
+
+    if (!scheduled_job) throw new Error("No scheduled job found");
+
+    await scheduled_job.set({
+        send_email: send_email,
+        updated_at: getIsoUTCNow(),
+    }
+    );
+    await scheduled_job.save();
+    return scheduled_job;
+}
+
+exports.updateAutomateAnalysis = async (management_id, is_active) => {
+    let scheduled_job = await this.findScheduledJobByManagementId(management_id);
+
+    if (!scheduled_job) throw new Error("No scheduled job found");
+
+    await scheduled_job.set({
+        is_active: is_active,
+        updated_at: getIsoUTCNow(),
+    }
+    );
+    await scheduled_job.save();
+    return scheduled_job;
+}
+
+exports.updatedScheduleExpression = async (management_id, scheduled_expression) => {
+    let scheduled_job = await this.findScheduledJobByManagementId(management_id);
+
+    if (!scheduled_job) throw new Error("No scheduled job found");
+
+    await scheduled_job.set({
+        scheduled_expression: scheduled_expression,
+        updated_at: getIsoUTCNow(),
+    }
+    );
+    await scheduled_job.save();
+    return scheduled_job;
+}
+
 exports.findManagementByOrgId = async (org_id) => {
     return await Management.findOne({
         where: {

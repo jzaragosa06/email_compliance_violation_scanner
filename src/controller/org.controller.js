@@ -189,6 +189,9 @@ exports.updateOrgInfo = async (req, res) => {
 
     if (!org_id) return res.status(400).json({ message: "The client sent a malformed or incomplete request" });
 
+    console.log('org_id: ', org_id);
+    console.log('body', req.body);
+
     let { org_name, org_email, org_phone, org_description, org_employee_count, org_logo } = req.body;
 
     try {
@@ -203,24 +206,12 @@ exports.updateOrgInfo = async (req, res) => {
         return res.status(200).json({ message: "Organization info updated successfully", orgInfo });
 
     } catch (error) {
+        console.log('error occured when updating: ', error.message);
+
         return res.status(500).json({ message: 'Failed to update organization info', error: error.message });
 
     }
 }
-
-// exports.findAllOrgUserAccounts = async (req, res) => {
-//     const { org_id } = req.params;
-
-//     try {
-
-//         const org_user_accounts = await findAllOrgUserAccounts(org_id);
-//         return res.status(200).json({ message: "Accounts retrieved successfully", accounts: org_user_accounts });
-//     } catch (error) {
-//         return res.status(200).json({ message: "Accounts failed to retrieved", error: error.message });
-
-//     }
-
-// }
 
 exports.findOrgUserAccounts = async (req, res) => {
     const { org_id } = req.params;

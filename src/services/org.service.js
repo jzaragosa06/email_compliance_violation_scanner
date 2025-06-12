@@ -56,8 +56,10 @@ exports.findOrgsByUserID = async (user_id) => {
                         model: Policy,
                     },
                 ]
-
             },
+            {
+                model: ScheduledJob,
+            }
         ]
     });
 
@@ -165,7 +167,7 @@ exports.updateOrgInfo = async (org_id, org_name, org_email, org_phone, org_descr
     if (!orgInfo) throw new Error("No organization info found");
 
     try {
-        orgInfo({
+        orgInfo.set({
             org_name: org_name,
             org_email: org_email,
             org_phone: org_phone,

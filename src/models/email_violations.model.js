@@ -38,6 +38,10 @@ const EmailViolations = sequelize.define(
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        analysis_run_id: {
+            type: DataTypes.STRING(36), //for counting the freq. of v. per run
+            allowNull: false
+        }, 
         created_at: {
             type: DataTypes.DATE,
             allowNull: false,

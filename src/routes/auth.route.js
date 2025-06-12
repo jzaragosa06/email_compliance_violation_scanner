@@ -9,7 +9,7 @@ router.post("/user/login/local", auth_user.loginLocal);
 
 router.get("/verify-email/:token", auth_user.verifyEmail);
 
-router.post("/user/:type/google", auth_user.googleAuth);
+router.get("/user/:type/google", auth_user.googleAuth);
 router.get("/user/google/callback", auth_user.googleUserOAuthCallback);
 
 // org user account authentication

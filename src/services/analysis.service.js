@@ -47,6 +47,7 @@ exports.analyzeOrgUserAccounts = async (org_id, emails) => {
                 const violations = await compareEmailAgainstPolicyRules(parsedEmail);
 
                 if (violations?.length) {
+                    
                     const result = await addEmailViolation(
                         management.management_id,
                         orgUserAccount.org_user_account_id,

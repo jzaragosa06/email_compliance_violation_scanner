@@ -141,12 +141,19 @@ exports.googleUserOAuthCallback = async (req, res) => {
             console.log('user: ', user);
 
             const token = generateJWTToken(user);
-            return res.status(201).json({ message: "Registered Successfully", token });
+            const responseData = JSON.stringify({ message: "Registered Successfully", token });
+
+            return res.redirect(`${process.env.VITE_FRONTEND_URL}/auth/google/callback?response=${encodeURIComponent(responseData)}`);
+            // return res.status(201).json({ message: "Registered Successfully", token });
         }
         else {
             const user = await handleLogin(userInfo.data, tokens.refresh_token);
             const token = generateJWTToken(user);
-            return res.status(200).json({ message: "Login Successfully", token });
+            const responseData = JSON.stringify({ message: "Login Successfully", token });
+
+            return res.redirect(`${process.env.VITE_FRONTEND_URL}/auth/google/callback?response=${encodeURIComponent(responseData)}`);
+
+            // return res.status(200).json({ message: "Login Successfully", token });
         }
 
     } catch (error) {

@@ -35,7 +35,7 @@ const OrgInfo = sequelize.define(
             allowNull: true,
         },
         org_logo: {
-            type: DataTypes.STRING,
+            type: DataTypes.TEXT,
             allowNull: true,
         }, 
         created_at: {
