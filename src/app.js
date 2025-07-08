@@ -20,17 +20,17 @@ app.use(cors({
 //routes
 app.use('/api', routes); 
 
-// sequelize.sync({
-//     force: true,
-// });
 
-sequelize.sync(); 
+// sequelize.sync(); 
 
 //because await doesnt work on top level files on common js 
 // i.e., just await initializeEmailAnalysisJobs();
 //but will work on mjs. 
 (async () => {
-    await sequelize.sync(); 
+    await sequelize.sync({
+        force: false,
+    });
+
     await initializeEmailAnalysisJobs();
 })();
 

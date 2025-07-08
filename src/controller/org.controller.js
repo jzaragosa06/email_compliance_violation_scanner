@@ -68,9 +68,9 @@ exports.addOrg = async (req, res) => {
         return res.status(201).json({ message: "New Organization Added", ...result })
 
     } catch (error) {
+        console.log('error', error.message);
         return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
-
 }
 
 //org user accounts

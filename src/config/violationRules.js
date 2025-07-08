@@ -26,8 +26,8 @@ const VIOLATION_RULES = {
     LARGE_ATTACHMENTS: {
         name: 'Large Attachment Policy',
         severity: 'LOW',
-        // maxSize: 25 * 1024 * 1024, // 25MB - expressed in bytes. kb then multiply that to 1024 to make a mb. then multiple to n to get n mb
-        maxSize: 25 * 1024, //25 kb
+        maxSize: 25 * 1024 * 1024, // 25MB - expressed in bytes. kb then multiply that to 1024 to make a mb. then multiple to n to get n mb
+        // maxSize: 25 * 1024
         checkSize: true
     },
     PHISHING_INDICATORS: {

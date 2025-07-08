@@ -17,7 +17,22 @@ const Policy = sequelize.define(
                 model: "orgs",
                 key: "org_id",
             }
-        }
+        },
+        pattern: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: 'sensitive',
+        },
+        created_at: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+        },
+        updated_at: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW,
+        },
     },
     {
         tableName: "org_email_policies",
